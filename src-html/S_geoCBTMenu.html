@@ -51,15 +51,13 @@ ResColorScn:	ldw	R1,#COLOR_MATRIX+(40*2)	; scrn color
 	jsr	MyMoveData
 	rts
 
-ChkOnLn1:	bra	10$	; TODO:BZ:DELME
-	lda	FlgNoDCD
+ChkOnLn1:	lda	FlgNoDCD
 	bne	10$
 	jmp	JComOnline
 10$:	lda	#1
 	rts
 
-ChkOnLn2:	bra	10$	; TODO:BZ:DELME
-	lda	FlgNoDCD
+ChkOnLn2:	lda	FlgNoDCD
 	bne	10$
 	jmp	JComOnline
 10$:	lda	#0
@@ -184,7 +182,7 @@ MnuTxa06:	.byte	27,"disconnect",0
 
 
 Menu03:	.byte	$0f,$55	; menu top, bottom
-	.word $003b,$0063	; menu left, right
+	.word $0046,$006e	; menu left, right
 	.byte	$80|$05	; HORIZONTAL menu | # items
 	.word MnuTxt08	; menu text pointer
 	.byte	$00	; MENU_ACTION
@@ -214,16 +212,16 @@ MnuBauds:	.word MnuTxt08, MnuTxt09, MnuTxt0a, MnuTxt0b
 	.word MnuTxt0c, MnuTxt0d, $0000
 
 Menu03a:	.byte	$0f,$1d	; menu top, bottom
-	.word $003b,$0063	; menu left, right
+	.word $0046,$006e	; menu left, right
 	.byte	$80|$01	; HORIZONTAL menu | # items
 Menu03b:	.word MnuTxt08	; menu text pointer
 	.byte	$00	; MENU_ACTION
 	.word MenuAct	; **** action routine here!
 
 
-Menu04:	.byte	$0f,$47	; menu top, bottom
-	.word $006c,$00b0	; menu left, right
-	.byte	$80|$04	; HORIZONTAL menu | # items
+Menu04:	.byte	$0f,$30	; menu top, bottom
+	.word $0077,$00db	; menu left, right
+	.byte	$80|$02	; HORIZONTAL menu | # items
 	.word MnuTxt0e	; menu text pointer
 	.byte	$00	; MENU_ACTION
 	.word doEchoOn	; **** action routine here!
@@ -244,7 +242,7 @@ MnuTxt41:	.byte	27," ASCII term",27,0
 
 
 Menu05:	.byte	$0f,$2b	; menu top, bottom
-	.word $0087,$00c0	; menu left, right
+	.word $0092,$00cb	; menu left, right
 	.byte	$80|$02	; HORIZONTAL menu | # items
 	.word MnuTxt10	; menu text pointer
 	.byte	$00	; MENU_ACTION
@@ -256,7 +254,7 @@ MnuTxt10:	.byte	27,"upload",0
 MnuTxt11:	.byte	27,"download",0
 
 Menu05a:	.byte	$0f,$1d	; menu top, bottom
-	.word $0087,$00d8	; menu left, right
+	.word $0092,$00e3	; menu left, right
 	.byte	$80|$01	; HORIZONTAL menu | # items
 	.word MnuTxa10	; menu text pointer
 	.byte	$00	; MENU_ACTION
@@ -264,7 +262,7 @@ Menu05a:	.byte	$0f,$1d	; menu top, bottom
 MnuTxa10:	.byte	27,"not connected",27,0
 
 Menu06:	.byte	$0f,$54	; menu top, bottom
-	.word $00ba,$00f7	; menu left, right
+	.word $00c5,$0102	; menu left, right
 	.byte	$80|$05	; HORIZONTAL menu | # items
 MnuSt06:	.word MnuTxt12	; menu text pointer
 	.byte	$00	; MENU_ACTION
@@ -289,13 +287,13 @@ MnuTxt17:	.byte	27,"dump",0
 MnuTxt18:	.byte	27,"stop",0
 
 Menu07a:	.byte	$0f,$1d	; menu top, bottom
-	.word $00ba,$00f7	; menu left, right
+	.word $00c5,$0102	; menu left, right
 	.byte	$80|$01	; HORIZONTAL menu | # items
 	.word MnuTxt13	; menu text pointer
 	.byte	$00	; MENU_ACTION
 	.word doExit	; **** action routine here!
 Menu07b:	.byte	$0f,$1d	; menu top, bottom
-	.word $00da,$0118	; menu left, right
+	.word $00e5,$0123	; menu left, right
 	.byte	$80|$01	; HORIZONTAL menu | # items
 	.word MnuTxt13	; menu text pointer
 	.byte	$00	; MENU_ACTION
@@ -429,14 +427,14 @@ doBaud:	cmp	BaudCode
 30$:	lda	#13
 	sta	BaudCmd+5,y
 	jsr	keyRestore
-	;jsr	CLL2xxRb	; resets modem buf ptr -- is necc?
+	jsr	JComBufR	; resets modem buf ptr -- is necc?
 	ldw	R0,#BaudCmd
 	jsr	ComPutS
 	;ldw	R0,#BaudCmd
 	;jsr	DrawStr
-	jsr	BaudSet
+	jsr	JBaudSet
 	jsr	FixBaud
-	;jsr	CLL2xxRb	; again, dunno if necc
+	jsr	JComBufR	; again, dunno if necc
 	jsr	JComFlon
 	jsr	keySetup
 	jmp	GotoFirstMenu	

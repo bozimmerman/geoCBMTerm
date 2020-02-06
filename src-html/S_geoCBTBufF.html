@@ -24,6 +24,7 @@ doBufSav:	jsr	OpenRR
 10$:	ldb	XDnFType,#$02	; first option==ascii
 	ldw	FBOXtt0,#FBOXtt2
 	ldw	FBOXtt1,#FBOXtt2+5
+	ldb	FBOXnoob,#0	; deactivate buttons	
 	jsr	DoXDBox
 	beq	20$
 	rts		; cancel already done

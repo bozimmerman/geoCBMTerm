@@ -41,6 +41,7 @@ StartTerm:	lda	menuInit
 	ldw	A5,#AboutStrs	
 	jsr	InitDaAb
 	jsr	DrawMenu	; draw the menu if not already
+	jsr	FixBaud	; marks curr baud rate on menu
 	ldw	fontPtr,#GEOSFonB
 	ldb	flgREV,#0
 	ldb	flgUP,#0

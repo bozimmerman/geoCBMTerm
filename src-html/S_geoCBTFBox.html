@@ -221,7 +221,12 @@ FBOXcbox:	.byte	$80 | $01
 	.byte	$1a,$26	;XOffset.Yalso
 	.byte	A5	
 	.byte	16	;maximum # of chars to accept.
-	.byte	15	; do graphics table
+	.byte	$02,$10,$47	;Cancel icon
+FBOXnod1:	.byte	18	;drive icon
+	.byte	$09,$47
+	.word	FBOXdcn2
+FBOXnod2:	.byte	$06,$02,$47	;DISK icon
+FBOXnoob:	.byte	15	; do graphics table or 0 to disable
 	.word	FBOXgfx
 	.byte	11	;add text
 	.byte	$1e,$40
@@ -229,13 +234,8 @@ FBOXtt0:	.word	FBOXttt
 	.byte	11	;add text
 	.byte	$3d,$40
 FBOXtt1:	.word	FBOXttt+4
-	.byte	$02,$10,$47	;Cancel icon
 	.byte	17
 	.word	FBOXclk
-FBOXnod1:	.byte	18	;drive icon
-	.byte	$09,$47
-	.word	FBOXdcn2
-FBOXnod2:	.byte	$06,$02,$47	;DISK icon
 	.byte	0	;end of defintion
 
 FBOXdcn2:	.word	FBOXdmag	;graphic location
