@@ -28,7 +28,7 @@ geoTelnet was built using Concept for Wheels 64.  It might also build using geoP
 In addition to the given source, you'll require several components from the geoModules project:
 https://github.com/bozimmerman/geoModules
 
-You can link directly from the given object code, or built from scratch, provided the necessary geoModules include files and object files are present, and the F/geoTelnet.rel font file.
+You can link directly from the given object code, or built from scratch, provided the necessary geoModules include files and object files are present, and the F/CBMFont.rel and F/C=GFXFont.rel font files.
 
 Configuring and Using:
 
