@@ -48,27 +48,36 @@ CBTTerm:	jsr	CBTClrMdm
 	.byte	REC_TERM
 CBTFirst:	jmp	VPRGbase
 
+
+
 ; ** do a Capture Buffer File Operation
 CBTBufF:	pha
 	jsr	CBTClrMdm
+	jsr	keyRestore
 	jsr	i_LdMod
 	.byte	REC_BUFF
 	pla
 	beq	CBTFirst
 CBTSecnd:	jmp	VPRGbase+3
 
+
+
 ;** do a Quick Connect or Phonebook operation
 CBTConn:	pha
 	jsr	CBTClrMdm
+	jsr	keyRestore
 	jsr	i_LdMod
 	.byte	REC_CONN
 	pha
 	bne	CBTSecnd
 	jmp	CBTFirst
 
+
+
 ;** do a File Transfer Operation
 CBTXfer:	pha
 	jsr	CBTClrMdm
+	jsr	keyRestore
 	jsr	i_LdMod
 	.byte	REC_XFER
 	pha
@@ -181,6 +190,14 @@ ComPause:	jsr	Check128
 	rts
 
 
+keyRestore:	sei
+	ldw	intBotVector,#0
+	mvw	savKeyVec,keyVector
+	cli
+	jsr	PromptOff
+	ldb	$84b4,#0	; why didn't promptoff do this?
+	rts
+
 ; * Global Presets and Screen Terminal variables
 txtTop:	.byte	$10	; first pixel row of terminal
 txtBot:	.byte	199	; last pixel row of terminal
@@ -189,7 +206,11 @@ txtRight:	.word	319	; rightmost pixel col of term
 txtBEnd:	.byte	199	; 
 txtREnd:	.word	312
 
+
+
+; * Here be Global Variables
 .ramsect
+FlgNoDCD:	.block	1
 menuInit:	.block	1
 BuffEnable:	.block	1
 mdmRdRate:	.block	1
@@ -206,11 +227,5 @@ colorLPtr:	.block	2
 colorPPtr:	.block	2	; saved previous color pointer
 colorBBuf:	.block	$03e9-(40*2)
 outBuf:	.block	256
-
-
-; * Here be Global Variables
-.ramsect
-
-FlgNoDCD:	.block	1
 
 </pre></body></html>

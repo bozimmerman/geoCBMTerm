@@ -106,13 +106,7 @@ keySetup:	mvw	keyVector,savKeyVec
 	jsr	PromptOn
 	rts
 
-keyRestore:	sei
-	ldw	intBotVector,#0
-	mvw savKeyVec,keyVector
-	cli
-	jsr	PromptOff
-	ldb	$84b4,#0	; why didn't promptoff do this?
-	rts
+
 
 KeyPRtn:	lda	keyData
 	bne	10$

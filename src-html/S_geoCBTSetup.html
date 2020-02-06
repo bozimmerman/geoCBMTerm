@@ -90,8 +90,8 @@ scnSetup:	ldb	txtTop,#$10	; screen def
 	jsr	ClrTrmScn
 	jsr	UseSystemFont	; * for now
 	ldb	dispBufferOn,#ST_WR_FORE
-	;mvb	baseColor,curColor
-	;jsr	CrsrTL	
+	mvb	baseColor,curColor
+	jsr	CrsrTL	
 	mvb	txtXY+2,R1H
 	mvw	txtXY,R11
 	ldb	windowTop,#0	; necc for menu recover?
