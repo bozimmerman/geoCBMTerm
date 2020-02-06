@@ -36,7 +36,7 @@ XComReset:	jsr	XMOPause
 DoXUpload:	jsr	XferInit
 	jsr	DoXUBox
 	beq	10$
-	rts
+	jmp	CBTTerm
 10$:	lda	txtTop	; first row to clear
 	jsr	ClrTrmScn	; clears the screen
 	ldb	flgDoBg,#0
@@ -54,10 +54,10 @@ XUpload:	ldb	XMoreFlg,#$ff	; there is definitely more to get
 	jsr	OpenSF
 	cpx	#0
 	beq	10$
-	jsr	XComReset
 	ldw	A2,#XUpFlTxt
 	jsr	OKBox
-	jmp	keySetup
+	jsr	MnuActDn
+	jmp	CBTTerm
 10$:	jsr	XComReset
 	jsr	UseSystemFont
 	jsr	XUpBox
@@ -71,19 +71,16 @@ XUpload:	ldb	XMoreFlg,#$ff	; there is definitely more to get
 	jsr	XComReset
 	lda	txtTop	; first row to clear
 	jsr	ClrTrmScn	; clears the screen
-	jsr	scnReset
 	ldw	A2,#XUpDnTxt
 	jsr	OKBox
 	bra	20$
 15$:	jsr	XComReset
 	lda	txtTop	; first row to clear
 	jsr	ClrTrmScn	; clears the screen
-	jsr	scnReset	; will restore font
 	ldw	A2,#XUpErTxt
 	jsr	OKBox
 20$:	jsr	FixDrive
-	jsr	keySetup
-	rts
+	jmp	CBTTerm
 
 XUpDnTxt:	.byte	27,"Upload Complete!",27,0
 XUpErTxt:	.byte	27,"Upload Cancelled.",27,0
@@ -234,7 +231,7 @@ DoXDownload:
 	ldw	FBOXtt1,#FBOXttt+4
 	jsr	DoXDBox
 	beq	10$
-	rts
+	jmp	CBTTerm
 10$:	lda	txtTop	; first row to clear
 	jsr	ClrTrmScn	; clears the screen
 	ldb	flgDoBg,#0
@@ -253,8 +250,8 @@ XDownload:	ldw	XBufWrPtr,#BACK_SCR_BASE
 	beq	10$
 	ldw	A2,#XDnFlTxt
 	jsr	OKBox
-	jsr	XComReset
-	jmp	keySetup
+	jsr	MnuActDn
+	jmp	CBTTerm
 10$:	jsr	XComReset
 	jsr	UseSystemFont
 	jsr	XDnBox
@@ -273,7 +270,6 @@ XDownload:	ldw	XBufWrPtr,#BACK_SCR_BASE
 	jsr	XComReset
 	lda	txtTop	; first row to clear
 	jsr	ClrTrmScn	; clears the screen
-	jsr	scnReset
 	ldw	A2,#XDnDnTxt
 	jsr	OKBox
 	bra	20$
@@ -284,12 +280,10 @@ XDownload:	ldw	XBufWrPtr,#BACK_SCR_BASE
 	jsr	XComReset
 	lda	txtTop	; first row to clear
 	jsr	ClrTrmScn	; clears the screen
-	jsr	scnReset	; will restore font
 	ldw	A2,#XDnErTxt
 	jsr	OKBox
 20$:	jsr	FixDrive
-	jsr	keySetup
-	rts
+	jmp	CBTTerm
 
 XDnDnTxt:	.byte	27,"Download Complete!",27,0
 XDnErTxt:	.byte	27,"Download Cancelled.",27,0

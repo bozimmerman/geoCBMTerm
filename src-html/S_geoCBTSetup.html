@@ -116,6 +116,7 @@ mdmSetup:	ldb	A2L,#>RS232Buf	; input buffer
 	jsr	JPauSec
 	ldw	R0,#mdmInitStr
 	jsr	JComPutS
+	jsr	JComFloff
 	rts
 
 mdmInitStr:	.byte 13,"  atze0v1x1f0q0r1&p0i0",13,0

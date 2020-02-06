@@ -25,8 +25,8 @@
 .noeqin
 .noglbl
 .include GEOSequates
-.eqin
-.glbl
+.eqin			; if you run out of symbols...
+.glbl			; you can use these selectively
 .endif
 
 .psect
@@ -44,14 +44,14 @@ StartTerm:	lda	menuInit
 	ldw	fontPtr,#GEOSFonB
 	ldb	flgREV,#0
 	ldb	flgUP,#0
-10$:	ldb	fontSflg+1,#$00
+10$:	ldb	fontSflg+1,#$00	; initialize the font pointer
 	cwi	fontPtr,#GEOSFonB
 	beq	13$
 	ldb	fontSflg+1,#$80
 13$:	ldw	p2fonTab+1,#LP2FONT
 	lda	flgUP
 	beq	15$
-	ldw	p2fonTab+2,UP2FONT
+	ldw	p2fonTab+1,#UP2FONT
 15$:	jsr	FixCurFont
 	jsr	FixEcho	; fix menu options 
 	jsr	FixATerm
@@ -62,6 +62,7 @@ StartTerm:	lda	menuInit
 	sta	CT64128B
 20$:	jsr	keySetup
 	jsr	JComEnable	; restore disabled modem driver
+	jsr	JComFlon
 	mvw	colorPPtr,colorPtr
 	rts
 
@@ -125,28 +126,29 @@ keySetup:	mvw	keyVector,savKeyVec
 KeyPRtn:	lda	keyData
 	bne	10$
 99$:	rts
-10$:	tax
-	lda	flgUP
-	bne	15$
-	lda	LGA2PET,x
+10$:	tax		; start key press process
+	lda	flgCNTRL	; check for control key
+	bne	11$
+	lda	GOA2PET,x	; no cntrl key, so nrml lookup
 	beq	99$
 	bne	20$
-15$:	lda	UGA2PET,x
+11$:	txa		; cntrl key, so filter, then..
+	and	#$7f
+	tax
+	lda	CTL2PET,x	; do special table lookup
 	beq	99$
-20$:	ldx	BufferFlg
-	beq	30$
+20$:	ldx	BufferFlg	; now we have a PETSCII!
+	beq	30$	; check if Buffering
 	pha
-	jsr	PutRByte
+	jsr	PutRByte	; if buffering, send ch to buff
 	pla
-30$:	ldx	flgEcho
-	beq	50$
-	cmp	#$14
+30$:	ldx	flgEcho	; Test For Echo
 	beq	50$
 40$:	pha
 	jsr	SafeDraw
 	pla
 50$:	pha
-	jsr	JComSPut
+	jsr	JComSPut	; finally, send char to modem
 	pla
 	rts
 
@@ -225,9 +227,6 @@ fontSflg:	cmp	#$00	; check bit most high
 	lda	curColor
 	.byte	$8d	; sta
 colorPtr:	.word COLOR_MATRIX
-	lda	R11L
-	and	#$04	; even works on 8-pt fonts!
-	bne	10$
 	inw	colorPtr
 10$:	inc	flgDoBg
 	cpw	R11,txtRight
@@ -247,7 +246,7 @@ DrawLF:	cpb	R1H,txtBEnd
 	adb	curHeight,R1H
 	cwi	colorLPtr,#$8fc0
 	bcs	05$
-	avw	#40,colorLPtr
+	avw	#40,colorLPtr	; needs 80 col fix
 	avw	#40,colorPtr
 05$:	rts
 10$:	ldw	R0,#SCREEN_BASE+(24*40)
@@ -290,32 +289,87 @@ ClrColLn:	tya
 
 
 PutDel:	cwi	R11,#3	; todo: txtLeft
-	bcs	15$
-	mvw	txtRight,R11
-	cbi	R1H,#$20	; todo: txtHeight?
-	bcc	15$
+	bcc	10$
+	jmp	PutDel1
+10$:	cbi	R1H,#$20	; todo: txtHeight?
+	bcs	20$
+	rts
+20$:	mvw	txtRight,R11
 	sbb	curHeight,R1H
 	svw	#40,colorLPtr
-	mvw	colorLPtr,colorPtr
-	avw	#40,colorPtr
-15$:	ldb	curWidth+1,#0
-	sbw	curWidth,R11	; realSize, #$04
+	ldb	curWidth+1,#0
+	sbw	curWidth,R11	; realSize
 	lda	#$20
 	jsr	SmallPutChar
-	ldb	curWidth+1,#0
+	jmp	PutDel2
+PutDel1:	mvb	R1H,txtXY+2
+	mvw	R11,txtXY
+	ldx	R1H
+	jsr	GetScanLine
+	mvw	R5,R0
+	adw	R11,R0
+	mvw	R0,R1
+	svw	#8,R1
+	ldw	R2,#320	; change this for 80 col
+	sbw	txtXY,R2
+	jsr	MyMoveData
+	mvw	colorPtr,R0
+	mvw	colorPtr,R1
+	sbw	colorLPtr,R1
+	ldw	R2,#40
+	sbw	R1,R2
+	mvw	R0,R1
+	dew	R1
+	jsr	MyMoveData
+	mvb	txtXY+2,R1H
+	ldw	R11,#312	; also, change this for 80 col
+	lda	#$20	; will ignore reverse, and font!
+	jsr	SmallPutChar
+	mvb	txtXY+2,R1H
+	mvw	txtXY,R11
+PutDel2:	ldb	curWidth+1,#0
 	sbw	curWidth,R11
-	lda	R11L
-	and	#$04
-	beq	20$
 	dew	colorPtr
 20$:	ldb	flgDoBg,#1
 	rts
 
 
 
-DrawIns:	;*******TODO:BZ
+DrawIns:	cpw	txtXY, txtRight
+	bcc	20$
+10$:	rts
+20$:	mvb	R1H,txtXY+2
+	mvw	R11,txtXY
+	ldx	R1H
+	jsr	GetScanLine
+	ldb	curWidth+1,#0
+	mvw	R5,R0
+	adw	R11,R0
+	mvw	R0,R1
+	adw	curWidth,R1
+	ldw	R2,#320	; change this for 80 col
+	sbw	txtXY,R2
+	sbw	curWidth,R2	; because we are copying all but
+	jsr	MyMoveData
+DrawIns2:	mvw	colorPtr,R0	; i hate the label here
+	mvw	colorPtr,R1
+	sbw	colorLPtr,R1
+	ldw	R2,#40	; 80 col probl
+	sbw	R1,R2
+	dew	R2
+	mvw	R0,R1
+	inw	R1
+	jsr	MyMoveData
+	mvb	txtXY+2,R1H
+	mvw	txtXY,R11
+	lda	#$20	; will ignore reverse, and font!
+	jsr	SmallPutChar
+	ldb	curWidth+1,#0
+	adw	curWidth,R11
+	ldb	flgDoBg,#1
+	mvb	txtXY+2,R1H
+	mvw	txtXY,R11
 	rts
-
 
 
 
@@ -342,42 +396,49 @@ scnReset:	mvb	baseColor,curColor
 CrsrUp:	cpb	txtTop,txtXY+2	; Cursor Up
 	bcc	10$
 	rts
-10$:	svw	#40,colorLPtr
+10$:	svw	#40,colorLPtr		; 80 col unfixed
 	svw	#40,colorPtr
 	sbb	curHeight,txtXY+2
 	rts
 
-CrsrDn:	cpb	txtXY+2,txtBEnd	; Cursor Down
-	bcc	10$
-09$:	rts
-10$:	adb	curHeight,txtXY+2
-	cwi	colorLPtr,#$8fc0
-	bcs	09$
-	avw	#40,colorLPtr
-	avw	#40,colorPtr
+CrsrDn:	mvw	txtXY,R11
+	mvb	txtXY+2,R1H
+	jsr	DrawLF
+	mvw	R11,txtXY
+	mvb	R1H,txtXY+2
 	rts
 
 CrsrRt:	cpw	txtXY,txtREnd	; Cursor Forward
+	bcc	20$
+	cpb	txtXY+2,txtBEnd
 	bcc	10$
 	rts
-10$:	ldb	curWidth+1,#0
+10$:	ldw	txtXY,#0
+	mvw	colorLPtr,colorPtr
+	jmp	CrsrDn
+20$:	ldb	curWidth+1,#0
 	adw	curWidth,txtXY
-	lda	txtXY
-	and	#$04
-	bne	20$
 	inw	colorPtr
-20$:	rts
-
-CrsrLt:	cpw	txtLeft,txtXY	; Cursor Backward
+	cpw	txtXY,txtREnd	; Cursor Forward
+	bcc	30$
+	cpb	txtXY+2,txtBEnd
 	bcc	10$
+30$:	rts
+
+CrsrLt:	cpw	txtLeft,txtXY	; Cursor Backward	
+	bcc	20$
+	cbi	txtXY+2,#$20	; todo: txtHeight?
+	bcs	10$
 	rts
-10$:	ldb	curWidth+1,#0
+10$:	mvw	txtRight,txtXY
+	svw	#8,txtXY
+	mvw	colorLPtr,colorPtr
+	avw	#39,colorPtr	; fix for 80 col
+	jmp	CrsrUp
+20$:	ldb	curWidth+1,#0
 	sbw	curWidth,txtXY
-	lda	txtXY
-	and	#$04
-	beq	20$
 	dew	colorPtr
-20$:	rts
+30$:	rts
 
 
 
@@ -415,9 +476,15 @@ QFlush:	lda	OutBuf
 	
 
 
-MainLp:	jsr	JComGet
+MainLp:	jsr	KeyChex
+	jsr	JComGet
 	bcc	MainLp1
-	rts
+	lda	flgDoBg	; check for crsr mv		
+	beq	10$
+	mvw	txtXY,stringX
+	mvb	txtXY+2,stringY
+	jsr	PromptOn
+10$:	rts
 MainLp1:	tax
 	mvb	mdmRdRate,A5L
 	mvb	txtXY+2,R1H
@@ -457,12 +524,38 @@ CT64128B:	.byte	$18		; clc=64, sec=$38
 	mvw	R11,txtXY
 	rts
 
-BuffFlush:	lda	flgDoBg	; check for flush/exit -- no req!		
-	beq	10$
-	mvw	txtXY,stringX
-	mvb	txtXY+2,stringY
-	jsr	PromptOn
-10$:	lda	A9L
+
+
+KeyChex:	ldb	$dc00,#$7f	; read cia for cntrl key
+	lda	$dc01
+	tax
+	and	#$04
+	eor	#$04
+	sta	flgCNTRL
+	txa		; now look for c= key
+	and	#$20
+	beq	20$	; if 0, then held down
+10$:	rts
+20$:	ldb	$dc00,#$bf
+	lda	$dc01	; check for right shift
+	and	#$10
+	beq	30$	; got right shift!
+	ldb	$dc00,#$fd
+	lda	$dc01
+	and	#$80	; check left shift
+	bne	10$
+30$:	ldw	p2fonTab+1,#LP2FONT
+	lda	flgUP
+	bne	40$
+	ldw	p2fonTab+1,#UP2FONT
+	ldb	flgUp,#$ff
+	rts
+40$:	ldb	flgUp,#0
+	rts
+
+
+
+BuffFlush:	lda	A9L
 	bne	11$
 	inc	A9L
 	lda	$dc08
@@ -475,10 +568,10 @@ BuffFlush:	lda	flgDoBg	; check for flush/exit -- no req!
 	bcc	19$
 	ldb	A9L,#0
 	jsr	QFlush
-19$:	;mvb	R1H,txtXY+2
-	;mvw R11,txtXY
-	rts
+19$:	rts
 
+.ramsect
+flgCNTRL:	.block	1
 ; that's all folks!
 
 </pre></body></html>

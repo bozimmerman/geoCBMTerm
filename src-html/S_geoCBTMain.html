@@ -159,7 +159,8 @@ Check128:	lda	#$12
 10$:	cmp	#$80
 	rts
 
-ComUnset:	jmp	JComDisable
+ComUnset:	jsr	JComFloff
+	jmp	JComDisable
 
 ComReset:	jsr	ComPause
 	jmp	JComReInit
@@ -213,7 +214,7 @@ BuffEnable:	.block	1
 mdmRdRate:	.block	1
 savKeyVec:	.block	2
 txtXY:	.block	3
-flgDoBg:	.block	1
+flgDoBg:	.block	1	; screen background update flg
 flgEcho:	.block	1
 flgANSI:	.block	1
 flgUP:	.block	1
