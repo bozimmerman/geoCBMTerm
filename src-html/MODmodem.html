@@ -185,13 +185,15 @@ ComReInit:	sei
 ComDisable:	jsr ComFloff
 20$:	lda CLL2Busy
 	bmi 20$
+	sei
 30$:	phb BANK_REG
 	ldb BANK_REG, #BANK_vIO
 	lda #$7f
 	sta $dd0d
 	plb BANK_REG
-	lda #$80
+	lda #$00
 	sta CLL2Busy
+	cli
 	clc 
 	rts 
 

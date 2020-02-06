@@ -118,11 +118,7 @@ KeyPRtn:	lda	keyData
 	pla
 12$:	ldx	flgEcho
 	beq	50$
-	cmp	#$0d
-	bne	15$
-	jsr	SafeDraw
-	lda	#$0a
-15$:	cmp	#$08
+	cmp	#$08
 	beq	50$
 	cmp	#$1d
 	bne	20$
@@ -191,11 +187,8 @@ SafeDraw:	pha
 DrawChar:	;pla
 	cmp	#$0d
 	bne	15$
-	jmp	DrawCR
-15$:	cmp	#$0a
-	bne	17$
-	jmp	DrawLF
-17$:	cmp	#$08
+	jmp	DrwCRLF
+15$:	cmp	#$08
 	bne	20$
 	jmp	PutDel
 20$:	cmp	#$20

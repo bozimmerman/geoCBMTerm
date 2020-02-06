@@ -331,7 +331,7 @@ doQConn:	jsr	GotoFirstMenu
 
 doPhb:	jsr	GotoFirstMenu
 	jsr	StopTerm
-	jsr	ComDisable
+	jsr	ComUnset
 	lda	#1
 	jmp	CBTConn
 
@@ -342,7 +342,7 @@ doXUpload:	jsr	GotoFirstMenu
 
 doXDownload:	jsr	GotoFirstMenu
 	jsr	StopTerm
-	jsr	ComDisable
+	jsr	ComUnset
 	lda	#1
 	jmp	CBTXfer
 

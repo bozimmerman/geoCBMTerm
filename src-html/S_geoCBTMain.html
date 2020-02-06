@@ -37,13 +37,8 @@ Main:	jsr	i_InitVPrg
 PermName:	.byte "geoCBMTerm  1.0a",0
 
 
-CBTClrMdm:
-10$:	lda	CLL2Busy
-	bmi	10$	; clear the current byte and 
-	jmp	JComDisable	; disable the modem
-
 ; ** switch back to terminal mode
-CBTTerm:	jsr	CBTClrMdm
+CBTTerm:	jsr	ComUnset
 	jsr	i_LdMod	 ; start the term!
 	.byte	REC_TERM
 CBTFirst:	jmp	VPRGbase
@@ -52,7 +47,7 @@ CBTFirst:	jmp	VPRGbase
 
 ; ** do a Capture Buffer File Operation
 CBTBufF:	pha
-	jsr	CBTClrMdm
+	jsr	ComUnset
 	jsr	keyRestore
 	jsr	i_LdMod
 	.byte	REC_BUFF
@@ -64,7 +59,7 @@ CBTSecnd:	jmp	VPRGbase+3
 
 ;** do a Quick Connect or Phonebook operation
 CBTConn:	pha
-	jsr	CBTClrMdm
+	jsr	ComUnset
 	jsr	keyRestore
 	jsr	i_LdMod
 	.byte	REC_CONN
@@ -76,7 +71,7 @@ CBTConn:	pha
 
 ;** do a File Transfer Operation
 CBTXfer:	pha
-	jsr	CBTClrMdm
+	jsr	ComUnset
 	jsr	keyRestore
 	jsr	i_LdMod
 	.byte	REC_XFER
@@ -163,6 +158,8 @@ Check128:	lda	#$12
 	lda	$c013
 10$:	cmp	#$80
 	rts
+
+ComUnset:	jmp	JComDisable
 
 ComReset:	jsr	ComPause
 	jmp	JComReInit

@@ -29,7 +29,7 @@ DoXUBox:
 	cpb	curDrive,VPRGdriv
 	bne	10$
 	ldb	FBOXnoo2,#0
-10$:	ldw	$885b,#$ff00	; whats this?
+10$:	ldw	$885b,#$ff00	; clear file win selections
 11$:	jsr	FBOXmvnm
 	ldw	R10,#0	; perm filename
 	ldb	R7L,#NOT_GEOS	; type of file
@@ -84,7 +84,7 @@ FBOXdcon:	.word FBOXdmag
 	.byte	$06, $10
 	.word FBOXswdv
 
-UpBxGfx:	jsr	ReDoMenu
+UpBxGfx:	;jsr	ReDoMenu	; menu code not avail
 	mvw	leftMargin,R3
 	mvw	rightMargin,R4
 	ldb	R11L,#$0f
