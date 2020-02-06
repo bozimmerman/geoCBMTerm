@@ -87,12 +87,102 @@ UP2FONT:
 
 
 CNTRLCH1:
-.word 0,0,0,0,0,ColorWH,0,0,0,0,0,0,0,CrsrRTLF,SwitchLC,0,0
-.word CrsrDN,RevON,CrsrTL,BackSpace,0,0,0,0,0,0,0,ColorRD,CrsrRT,ColorGN,ColorBL
+.word 0,0,0,0,0,ColorWH,0,0,0,0,0,0,0,DrawCRLF,SwitchLC,0,0
+.word CrsrDn,RevON,CrsrTL,PutDel,0,0,0,0,0,0,0,ColorRD,CrsrRt,ColorGN,ColorBL
 
 CNTRLCH2:
-.word 0,ColorOR,0,0,0,0,0,0,0,0,0,0,0,CrsrRTLF,SwitchUC,0
-.word ColorBL, CrsrUP, RevOFF, ClearScn, Insert, ColorBN, ColorPI, ColorDG, ColorGR, ColorLN, ColorLB, ColorLG, ColorPU, CrsrLF, ColorYE, ColorCY
+.word 0,ColorOR,0,0,0,0,0,0,0,0,0,0,0,DrawCRLF,SwitchUC,0
+.word ColorBK, CrsrUp, RevOFF, ClearScn, DrawIns, ColorBN, ColorPI, ColorDG, ColorGR, ColorLN, ColorLB, ColorLG, ColorPU, CrsrLf, ColorYE, ColorCY
+
+
+
+RevON:	lda flgREV
+	beq	10$
+	ldb	flgREV,#$ff
+	lda	curColor
+	and	#$0f
+	clc
+	rol	a
+	rol	a
+	rol	a
+	rol	a
+	sta	curColor
+10$:	rts
+
+RevOFF:	lda flgREV
+	bne	10$
+	ldb	flgREV,#$00
+	lda	curColor
+	and	#$f0
+	clc
+	ror	a
+	ror	a
+	ror	a
+	ror	a
+	sta	curColor
+10$:	rts
+
+	
+
+SwitchLC:	lda	flgUP
+	beq	10$
+	ldb	flgUP,#0
+	ldw	p2fonTab+1,#LP2FONT
+10$:	rts
+
+SwitchUC:	lda	flgUP
+	beq	10$
+	ldb	flgUP,#$ff
+	ldw	p2fonTab+1,#UP2FONT
+10$:	rts
+
+
+
+ColorROL:	lda	flgREV
+	bne	10$
+	stx	curColor
+	rts
+10$:	txa
+	clc
+	rol	a
+	rol	a
+	rol	a
+	rol	a
+	sta	curColor
+	rts
+
+ColorBK:	ldb	curColor, #0
+	rts
+ColorWH:	ldx	#1
+	jmp	ColorROL
+ColorRD:	ldx	#2
+	jmp	ColorROL
+ColorCY:	ldx	#3
+	jmp	ColorROL
+ColorPU:	ldx	#4
+	jmp	ColorROL
+ColorGN:	ldx	#5
+	jmp	ColorROL
+ColorBL:	ldx	#6
+	jmp	ColorROL
+ColorYE:	ldx	#7
+	jmp	ColorROL
+ColorOR:	ldx	#8
+	jmp	ColorROL
+ColorBN:	ldx	#9
+	jmp	ColorROL
+ColorPI:	ldx	#10
+	jmp	ColorROL
+ColorDG:	ldx	#11
+	jmp	ColorROL
+ColorGR:	ldx	#12
+	jmp	ColorROL
+ColorLN:	ldx	#13
+	jmp	ColorROL
+ColorLB:	ldx	#14
+	jmp	ColorROL
+ColorLG:	ldx	#15
+	jmp	ColorROL
 
 
 .ramsect

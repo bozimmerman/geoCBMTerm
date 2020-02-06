@@ -38,10 +38,14 @@ StartTerm:	lda	menuInit
 	ldw	A2,#0	; "About" refresh
 	ldw	A3,#DAdone	; DA refresh
 	ldw	A4,#DAinit	; DA init
-	ldw	A5,#AboutStrs
-	ldw	fontPtr,#GEOSFonB
+	ldw	A5,#AboutStrs	
 	jsr	InitDaAb
 	jsr	DrawMenu	; draw the menu if not already
+	ldw	fontPtr,#GEOSFonB
+	ldb	flgREV,#0
+	ldb	flgUP,#0
+	ldb	fontSflg+1,#$80
+	ldw	p2fonTab+1,#LP2FONT
 10$:	jsr	FixCurFont
 	jsr	FixEcho	; fix menu options 
 	jsr	FixATerm
@@ -61,6 +65,8 @@ Check128:	lda	#$12
 	lda	$c013
 10$:	cmp	#$80
 	rts
+
+
 
 CleanExit:	jsr	PromptOff
 	jsr	keyRestore
@@ -110,56 +116,32 @@ keySetup:	mvw	keyVector,savKeyVec
 
 KeyPRtn:	lda	keyData
 	bne	10$
-	rts
-10$:	; *** TODO:BZ: convert ascii to petscii for buff
-	ldx	BufferFlg
-	beq	12$
+99$:	rts
+10$:	tax
+	lda	flgUP
+	bne	15$
+	lda	LGA2PET,x
+	beq	99$
+	bne	20$
+15$:	lda	UGA2PET,x
+	beq	99$
+20$:	ldx	BufferFlg
+	beq	30$
 	pha
 	jsr	PutRByte
 	pla
-12$:	ldx	flgEcho
+30$:	ldx	flgEcho
 	beq	50$
-	cmp	#$08
-	beq	50$
-	cmp	#$1d
-	bne	20$
-	lda	#$08
-20$:	jsr	SafeDraw
-50$:	lda	keyData
-	jsr	KeyComPut
+	cmp	#$14
+	beq	$50
+40$:	pha
+	jsr	SafeDraw
+	pla
+50$:	pha
+	jsr	JComSPut
+	pla
 	rts
 
-KeyComPut:	ldx	flgANSI
-	beq	30$
-	ldx	#0
-11$:	cmp	KeyACt,x
-	beq	20$
-	inx
-	inx
-	cpx	#$08
-	bcc	11$
-	bcs	30$
-20$:	inx
-	lda	KeyACt,x
-	pha
-	lda	#27
-	jsr	JComSPut
-	lda	#91
-	jsr	JComSPut
-	pla
-30$:	cmp	#$1d
-	bne	31$
-	lda	#$08
-31$:	cmp	#$16
-	bne	40$
-39$:	lda	#$1b
-40$:	cmp	#$14
-	beq	39$
-	pha
-	jsr	JComSPut
-	pla
-	rts
-KeyACt:	.byte 16,65,17,66,8,68,30,67,0,0
 
 DrawStr:	mvb	txtXY+2,R1H
 	mvw	txtXY,R11
@@ -185,18 +167,49 @@ SafeDraw:	pha
 
 
 
-DrawChar:	; ***** TODO:BZ:Convert PETSCII to **FONT** code
-	cmp	#$0d
-	bne	15$
-	jmp	DrwCRLF
-15$:	cmp	#$08	; ****** TODO:BZ:NOT RIGHT
-	bne	20$
-	jmp	PutDel
-20$:	cmp	#$20
-	bcs	30$
-29$:	rts
-30$:	cmp	#$7f
-	bcs	29$
+DrawChar:	tax
+p2fonTab:	lda	LP2FONT,x	; convert PETSCII to font code
+	bne	DrawChFn	; if its non-0, jump down to draw
+	txa		; if NOT, grab special routine
+	bmi	10$	; if HIGH special, use LOW table
+	and	#$1f
+	rol	a
+	tax
+	lda	CNTRLCH1,x	; low special routine (<32)
+	sta	DrawSpec+1
+	inx
+	lda	CNTRLCH1,x
+	beq	20$
+	sta	DrawSpec+2
+	bne	DrawSpec	; done setting spec 1, GO!
+10$:	and	#$1f	; * start of HIGH special tab
+	rol	a
+	tax
+	lda	CNTRLCH2,x	; high special routine (128-128+32)
+	sta	DrawSpec+1
+	inx
+	lda	CNTRLCH2,x
+	beq	20$
+	sta	DrawSpec+2
+	bne	DrawSpec	
+20$:	rts
+DrawSpec:	jmp	PutDel	; Do special processing routine
+DrawChFn:	pha		; ** beginning of normal ch draw
+fontSflg:	xor	#$80	; check bit most high
+	bmi	90$	; if current font is good, draw
+	pla		; otherwise, time to switch
+	bmi	10$	; if high bit, then fonA
+	pha
+	ldb	fontSflg+1,#$80
+	ldw	fontPtr,#GEOSFonA	; set font A
+	jsr	FixCurFont
+	bra	90$
+10$:	pha
+	ldb	fontSflg+1,#$00
+	ldw	fontPtr,#GEOSFonB	; set font B
+	jsr	FixCurFont
+90$:	pla		; finally, draw the char
+	and	#$7f
 	jsr	PutChar	; small put char?
 	lda	curColor
 	.byte	$8d	; sta
@@ -286,6 +299,8 @@ PutDel:	cwi	R11,#3	; todo: txtLeft
 	dew	colorPtr
 20$:	ldb	flgDoBg,#1
 	rts
+
+
 
 
 CrsrTL:	mvb	txtTop,txtXY+2
