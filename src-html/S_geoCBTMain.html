@@ -34,7 +34,7 @@ Main:	jsr	i_InitVPrg
 	.byte	REC_SETUP
 	jmp	VPRGbase
 
-PermName:	.byte "geoCBMTerm  1.0a",0
+PermName:	.byte "geoCBMTerm  1.0 ",0
 
 
 ; ** switch back to terminal mode
@@ -234,9 +234,9 @@ flgUP:	.block	1	; C= PETSCII uppcase Mode
 flgREV:	.block	1	; C= PETSCII reverse Mode
 fontPtr:	.block	2	; pointer to current font table
 origColor:	.block	1
-baseColor:	.block	1
+baseColor:	.block	1	; yellow, i think
 curColor:	.block	1	; current text color next char
-colorLPtr:	.block	2
+colorLPtr:	.block	2	; current text color start of line
 colorPPtr:	.block	2	; saved previous color pointer
 colorBBuf:	.block	$03e9-(40*2)	; saved color screen ALL
 outBuf:	.block	256

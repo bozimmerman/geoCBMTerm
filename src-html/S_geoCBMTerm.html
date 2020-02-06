@@ -128,9 +128,12 @@ KeyPRtn:	lda	keyData
 	bne	10$
 99$:	rts
 10$:	tax		; start key press process
-	jsr	ChkOnLn2
+	jsr	ChkOnLn1
+	bne	13$	; do stupid echo reversion
+	cpb	rvtEcho,flgEcho
 	beq	13$
 	mvb	rvtEcho,flgEcho
+	jsr	FixEcho
 13$:	lda	flgCNTRL	; check for control key
 	bne	15$
 	lda	GOA2PET,x	; no cntrl key, so nrml lookup
