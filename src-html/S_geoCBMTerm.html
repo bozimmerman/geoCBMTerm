@@ -38,6 +38,7 @@ StartTerm:	lda	menuInit
 	ldw	A3,#DAdone	; DA refresh
 	ldw	A4,#DAinit	; DA init
 	ldw	A5,#AboutStrs
+	ldw	fontPtr,#GEOSFonB
 	jsr	InitDaAb
 	jsr	DrawMenu	; draw the menu if not already
 10$:	jsr	FixCurFont
@@ -60,10 +61,10 @@ StopTerm:	mvw	colorPtr,colorPPtr
 	jsr	keyRestore
 	rts
 
-FixCurFont:	ldw	R0,#GEOSFont
+FixCurFont:	mvw	fontPtr,R0
 	jsr	LoadCharSet
 	ldb	baselineOffset,#0
-	ldb	curWidth,#$04	; curWidth=realSize
+	ldb	curWidth,#$08	; curWidth=realSize
 	rts
 
 
