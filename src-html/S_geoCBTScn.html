@@ -1,0 +1,37 @@
+<!DOCTYPE html><html><head><title>Untitled</title></head><body><pre>
+;*****************************
+;* S/geoCBTScn
+;* (c) 2018 Bo Zimmerman
+;*
+;* Multi-Record-Use Screen Routines
+;*****************************
+.noeqin
+.include	GEOSequates
+.glbl
+.eqin
+
+.psect
+
+
+ClrTrmScn:	pha
+	lda	#0
+	jsr	SetPattern
+	pla
+	sta	R2L
+	mvb	txtBot,R2H
+	mvw	txtLeft,R3
+	mvw	txtRight,R4
+	ldb	dispBufferOn,#ST_WR_FORE|ST_WR_BACK
+	jsr	Rectangle
+	ldb	dispBufferOn,#ST_WR_FORE
+	ldb	baseColor,#(7*16)	; yellow on black
+	ldw	R1,#COLOR_MATRIX+(40*2)
+	ldw	R0,#$3e8-(40*2)	; set initial scrn color
+	mvb	baseColor,R2L
+	jsr	FillRam	; color the term screen
+	rts
+
+
+
+
+</pre></body></html>

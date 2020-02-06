@@ -41,6 +41,7 @@ BANK_vSTD = $30
 ;*	ComSPut(	.a byte to send )
 ;*	BaudSet(	.byte	baud rate code )
 ;*	IsNTSC(	) .ne = pal, .eq = ntsc
+;*	PauSec(     ) pause about a second
 ;*	ComGet(	) .a byte, .cc = byte, .cs = nada
 ;*
 ;*     * = includes i_Function call, and returns
@@ -171,8 +172,10 @@ ComReInit:	sei
 	mvb	CLL2Baud,A3L
 	mvb	CLL2FloC,A3H
 	ldb	A2H,#1
-	ldb	A2L,#0
+	mvb	CLL2B1+2,A2L
 	jmp	ComInit
+
+
 
 ;************************
 ;* ComDisable	Disable RS-232 system
@@ -440,6 +443,25 @@ IsNTSC:	lda #$00
 	cli
 	jmp IsNTSC
 CLL2rti:	rti
+
+
+;*****************************
+;* PauSec	Pause about a second
+;* Outputs:	Lost Time.
+;******************************
+PauSec:	phb BANK_REG
+	ldb BANK_REG, #BANK_vIO
+	lda	#0
+	sta	APITemp2
+10$:	lda	#0
+	sta	$dc08
+20$:	lda	$dc08
+	beq	20$
+	inc	APITemp2
+	cbi	APITemp2,#9	; almost a second
+	bcc	10$
+	plb BANK_REG
+	rts
 
 
 ;*****************************

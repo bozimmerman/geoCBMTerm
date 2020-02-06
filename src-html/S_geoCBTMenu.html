@@ -14,7 +14,10 @@
 
 .psect
 
-
+AboutStrs:	.byte	24,"      geoCBMTerm 1.0a",0
+	.byte	24,"  For C64Net WiFi Modem",0
+	.byte	24,"    By Bo Zimmerman",0
+	.byte	24,"      bo@zimmers.net",0
 
 ScreenBack:	ldb	flgDoBg,#0
 	ldw	R0,#SCREEN_BASE+(16*40)
@@ -26,6 +29,11 @@ ScreenSafe:	lda	flgDoBg
 	beq	10$
 	jmp	ScreenBack
 10$:	rts
+
+MnuActDn:	jsr	FixDrive
+	jsr	keySetup
+	jmp	ResColorScn	; <-- only if xfer not done
+
 
 SavColorScn:	ldw	R0,#COLOR_MATRIX+(40*2)	; scrn color
 	ldw	R1,#ColorBBuf
@@ -45,13 +53,13 @@ ResColorScn:	ldw	R1,#COLOR_MATRIX+(40*2)	; scrn color
 
 ChkOnLn1:	lda	FlgNoDCD
 	bne	10$
-	jmp	ComOnline
+	jmp	JComOnline
 10$:	lda	#1
 	rts
 
 ChkOnLn2:	lda	FlgNoDCD
 	bne	10$
-	jmp	ComOnline
+	jmp	JComOnline
 10$:	lda	#0
 	rts
 
@@ -106,7 +114,7 @@ MnuF0_2:	.word MnuTxt05	; menu text pointer
 	.byte	$40	; DYN_MENU
 	.word MnuDyn07	; sub menu pointer
 MnuTxt00:	.byte	27,"geos",0
-MnuTxt01:	.byte	27,"telnet",0
+MnuTxt01:	.byte	27,"connect",0
 MnuTxt02:	.byte	27,"baud rate",0
 MnuTxt03:	.byte	27,"term",0
 MnuTxt04:	.byte	27,"x-modem",0
@@ -157,10 +165,10 @@ Menu02:	.byte	$0f,$2b	; menu top, bottom
 	.byte	$80|$02	; HORIZONTAL menu | # items
 	.word MnuTxt06	; menu text pointer
 	.byte	$00	; MENU_ACTION
-	.word QConnect	; **** action routine here!
+	.word doQConn	; **** action routine here!
 	.word MnuTxt07	; menu text pointer
 	.byte	$00	; MENU_ACTION
-	.word QConnPhb	; **** action routine here!
+	.word doPhb	; **** action routine here!
 MnuTxt06:	.byte	27,"connect",0
 MnuTxt07:	.byte	27,"phonebook",0
 
@@ -238,10 +246,10 @@ Menu05:	.byte	$0f,$2b	; menu top, bottom
 	.byte	$80|$02	; HORIZONTAL menu | # items
 	.word MnuTxt10	; menu text pointer
 	.byte	$00	; MENU_ACTION
-	.word DoXUpload	; **** action routine here!
+	.word doXUpload	; **** action routine here!
 	.word MnuTxt11	; menu text pointer
 	.byte	$00	; MENU_ACTION
-	.word DoXDownload	; **** action routine here!
+	.word doXDownload	; **** action routine here!
 MnuTxt10:	.byte	27,"upload",0
 MnuTxt11:	.byte	27,"download",0
 
@@ -304,164 +312,42 @@ doBufogle:	jsr	GotoFirstMenu
 10$:	ldb	BufferFlg,#0
 	rts
 
-PoorPETSCII:	ldx	XDnFType
-	cpx	#$02
-	bne	10$
-	rts
-10$:	cmp	#$08
-	bne	12$
-	lda	#$14	; 8->20
-11$:	rts
-12$:	cmp	#$0d
-	beq	11$
-	cmp	#$20
-	bcs	14$
-13$:	lda	#0
-	rts
-14$:	cmp	#$41
-	bcc	11$	; 32-40 is good
-	cmp	#$5b
-	bcs	20$
-	add	#$80
-	rts
-20$:	cmp	#$61
-	bcc	11$
-	cmp	#$7b
-	bcs	13$
-	sec
-	sbc	#$20
-	rts
-	
+
 
 doBufSav:	jsr	GotoFirstMenu
-	jsr	SavColorScn
-	jsr	ScreenSafe
-	jsr	keyRestore
-	jsr	OpenRR
-	beq	10$
-	ldw	A2,#BufSavNo
-	jsr	CNCLBox
-	jmp	XferCncl	; we're done.
-10$:	ldb	XDnFType,#$02	; first option==ascii
-	ldw	FBOXtt0,#FBOXtt2
-	ldw	FBOXtt1,#FBOXtt2+5
-	jsr	DoXDBox
-	beq	20$
-	rts		; cancel already done
-20$:	ldw	A2,#XFilename
-	ldb	A3L,#$01	; seq?
-	jsr	CreatSF
-	cpx	#0
-	beq	30$
-	ldw	A2,#BNoCrTxt
-	jsr	OKBox
-	jmp	XferCncl	; we're done.
-30$:	jsr	GetRByte
-	cpx	#0
-	bne	90$
-	jsr	PoorPETSCII
-	cmp	#0
-	beq	30$
-	jsr	PutSByte
-	bra	30$
-90$:	lda	#$81
-	sta	A2L
-	jsr	ClosSF
-	ldw	A2,#BDnCrTxt
-	jsr	OKBox
-	jsr	XComReset
-	jmp	XferCncl	; we're done.
-BufSavNo:	.byte	27,"Buffer Empty?!",0
-BNoCrTxt:	.byte	27,"File Create Failure.",0
-BDnCrTxt:	.byte	27,"Save Complete.",0
+	jsr	StopTerm
+	lda	#0
+	jmp	CBTBufF
 
 doBufLod:	jsr	GotoFirstMenu
-	jsr	SavColorScn
-	jsr	ScreenSafe
-	jsr	keyRestore
-	jsr	DoXUBox
-	beq	20$
-	rts		; cancel already done
-20$:	ldw	A2,#XFilename
-	ldb	A3L,#$00
-	jsr	OpenSF
-	cpx	#0
-	beq	30$
-	ldw	A2,#BNoOpTxt
-	jsr	OKBox
-	jsr	XComReset
-	jmp	XferCncl	; we're done.
-30$:	jsr	CreatRW
-35$:	jsr	GetSByte
-	cpx	#0
-	bne	90$
-	jsr	PutRByte
-	bra	35$
-90$:	lda	#$81
-	sta	A2L
-	jsr	ClosSF
-	ldw	A2,#BDnLdTxt
-	jsr	OKBox
-	jsr	XComReset
-	jmp	XferCncl	; we're done.
-BNoOpTxt:	.byte	27,"File Open Failure.",0
-BDnLdTxt:	.byte	27,"Load Complete.",0
+	jsr	StopTerm
+	lda	#1
+	jmp	CBTBufF
 
-doBufView:	jsr	GotoFirstMenu
-	jsr	SavColorScn
-	jsr	ScreenSafe
-	jsr	keyRestore
-	jsr	OpenRR
-	beq	10$
-	ldw	A2,#BufSavNo
-	jsr	CNCLBox
-	jmp	XferCncl	; we're done.
-10$:	jsr	ResColorScn	; <-- only if xfer not done
-	jsr	CrsrTL	; Screen clear and top-left
-	lda	txtTop
-	jsr	ClrTrmScn	; lda from prev MATTERS
-20$:	jsr	GetRByte
-	cpx	#0
-	bne	90$
-	jsr	SafeDraw
-	bra	20$
-90$:	mvb	txtXY+2,R1H
-	mvw	txtXY,R11
-	jsr	DrwCRLF
-	mvb	R1H,txtXY+2
-	mvw	R11,txtXY
-	jmp	keySetup
+doQConn:	jsr	GotoFirstMenu
+	jsr	StopTerm
+	lda	#0
+	jmp	CBTConn
 
-doBufDump:	jsr	GotoFirstMenu
-	jsr	SavColorScn
-	jsr	ScreenSafe
-	jsr	keyRestore
-	jsr	OpenRR
-	beq	10$
-	ldw	A2,#BufSavNo
-	jsr	CNCLBox
-	jmp	XferCncl	; we're done.
-10$:	jsr	ResColorScn	; <-- only if xfer not done
-	jsr	CrsrTL	; Screen clear and top-left
-	lda	txtTop
-	jsr	ClrTrmScn	; lda from prev MATTERS
-	lda	BufferFlg
-	pha
-	ldb	BufferFlg,#0
-20$:	jsr	GetRByte
-	cpx	#0
-	bne	90$
-	sta	keyData
-	jsr	KeyPRtn
-	bra	20$
-90$:	pla
-	sta	BufferFlg
-	mvb	txtXY+2,R1H
-	mvw	txtXY,R11
-	jsr	DrwCRLF
-	mvb	R1H,txtXY+2
-	mvw	R11,txtXY
-	jmp	keySetup
+doPhb:	jsr	GotoFirstMenu
+	jsr	StopTerm
+	jsr	ComDisable
+	lda	#1
+	jmp	CBTConn
+
+doXUpload:	jsr	GotoFirstMenu
+	jsr	StopTerm
+	lda	#0
+	jmp	CBTXfer
+
+doXDownload:	jsr	GotoFirstMenu
+	jsr	StopTerm
+	jsr	ComDisable
+	lda	#1
+	jmp	CBTXfer
+
+
+
 
 doEchoOn:	lda	#$01
 	sta	flgEcho
@@ -692,7 +578,7 @@ modal1On:	ldb	dispBufferOn,#ST_WR_FORE
 	.byte	$06,$7c,$00,$61,24,"Disconnecting...",27,0
 	rts		; exit from screen routine
 
-modal1Off:	jsr	FixFont80
+modal1Off:	jsr	FixCurFont
 	jsr	i_RecoverRectangle
 	.byte	$4f,$6e
 	.word $005f,$00eb
@@ -700,5 +586,5 @@ modal1Off:	jsr	FixFont80
 
 
 .ramsect
-BuffEnable:	.block	1
+
 </pre></body></html>

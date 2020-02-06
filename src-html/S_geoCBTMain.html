@@ -1,0 +1,173 @@
+<!DOCTYPE html><html><head><title>Untitled</title></head><body><pre>
+;*****************************
+;* S/geoTelMain
+;* (c) 2018 Bo Zimmerman
+;*
+;* The First Executing Code of the app
+;* Global unforgettable variables
+;* Global re-usable routines
+;*****************************
+.if Pass1
+.include GEOSequates
+.endif
+
+curWidth = $8807
+RS232Buf = $5f00	; global RS232 input buffer (1 pg, on pg boundary)
+
+REC_64DRVR = 1
+REC_SETUP = 2
+REC_TERM = 3
+REC_CONN = 4
+REC_XFER = 5
+REC_BUFF = 6
+
+.psect
+
+
+
+Main:	jsr	i_InitVPrg
+	.word PermName
+	cpx	#0
+	beq	20$
+10$:	jmp	EnterDeskTop
+20$:	jsr	i_LdMod
+	.byte	REC_SETUP
+	jmp	VPRGbase
+
+PermName:	.byte "geoCBMTerm  1.0a",0
+
+
+; ** switch back to terminal mode
+CBTTerm:	jsr	i_LdMod	 ; start the term!
+	.byte	REC_TERM
+CBTFirst:	jmp	VPRGbase
+
+; ** do a Capture Buffer File Operation
+CBTBufF:	pha
+	jsr	i_LdMod
+	.byte	REC_BUFF
+	pla
+	beq	CBTFirst
+CBTSecnd:	jmp	VPRGbase+3
+
+;** do a Quick Connect or Phonebook operation
+CBTConn:	pha
+	jsr	i_LdMod
+	.byte	REC_CONN
+	pha
+	bne	CBTSecnd
+	jmp	CBTFirst
+
+;** do a File Transfer Operation
+CBTXfer:	pha
+	jsr	i_LdMod
+	.byte	REC_XFER
+	pha
+	bne	CBTSecnd
+	jmp	CBTFirst
+	
+
+;* NMI-safe MoveData routines, that ignore the REU as well
+
+MyMoveData:
+	cpw	R0,R1
+	bcc	MyMoveBack
+	ldy	#0
+	lda	R2H
+	beq	20$
+10$:	lda	(R0),y
+	sta	(R1),y
+	iny
+	bne	10$
+	inc	R0H
+	inc	R1H
+	dec	R2H
+	bne	10$
+20$:	cpy	R2L
+	beq	30$
+	lda	(R0),y
+	sta	(R1),y
+	iny
+	bra	20$
+30$:	rts
+
+MyMoveBack:
+	adb	R2H,R0H
+	adb	R2H,R1H
+	ldy	R2L
+	beq	50$
+10$:	dey
+	lda	(R0),y
+	sta	(R1),y
+	tya
+	bne	10$
+50$:	dec	R0H
+	dec	R1H
+	lda	R2H
+	bne	60$
+	rts
+60$:	dey
+	lda	(R0),y
+	sta	(R1),y
+	tya
+	bne	60$
+	dec	R2H
+	bra	50$
+
+
+; * Put a whole 0 delimited string to the modem
+; * Why isn't this in MODmodem?
+JComPutS:	; to handle typos
+ComPutS:	ldy	#0	; *
+10$:	lda	(R0),y
+	beq	20$
+	jsr	JComSPut
+	iny
+	bne	10$
+20$:	rts
+
+
+
+; * if something causes the current drive to 
+; * have changed, fix it, check disk, prompt user
+FixDrive:	cpb	curDrive,VPRGdriv
+	bne	10$
+	rts
+10$:	lda	VPRGdriv
+	jsr	VPRGdev
+	jsr	VPRGok
+	rts
+
+
+; * Global Presets and Screen Terminal variables
+txtTop:	.byte	$10	; first pixel row of terminal
+txtBot:	.byte	199	; last pixel row of terminal
+txtLeft:	.word	0	; leftmost pixel col of term
+txtRight:	.word	319	; rightmost pixel col of term
+txtBEnd:	.byte	199	; 
+txtREnd:	.word	312
+
+.ramsect
+menuInit:	.block	1
+BuffEnable:	.block	1
+mdmRdRate:	.block	1
+savKeyVec:	.block	2
+txtXY:	.block	3
+flgDoBg:	.block	1
+flgEcho:	.block	1
+flgANSI:	.block	1
+origColor:	.block	1
+baseColor:	.block	1
+curColor:	.block	1
+colorLPtr:	.block	2
+colorPPtr:	.block	2	; saved previous color pointer
+colorBBuf:	.block	$03e9-(40*2)
+outBuf:	.block	256
+
+
+; * Here be Global Variables
+.ramsect
+
+FlgNoDCD:	.block	1
+
+</pre></body></html>

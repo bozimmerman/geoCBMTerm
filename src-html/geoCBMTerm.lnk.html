@@ -17,9 +17,7 @@ APIcommon.rel
 MODdaAB.rel
 MODscrn.rel	; dammit, everyone uses it anyway...
 MODreuX.rel
-S/geoCBTStart.rel	; * Actual start of program!
-S/geoCBTMenu.rel
-; insert more here
+S/geoCBTMain.rel	; * Actual start of program!
 MODvPrg.rel
 
 .mod	1
@@ -28,33 +26,35 @@ MODem64.rel	; replaces larger MODem128.rel in base
 
 .mod	2
 .psect	VPRGbase
-S/geoCBTSetup.rel
+S/geoCBTSetu.rel
+S/geoCBTScn.rel
 
 .mod	3
 .psect	VPRGbase
-S/geoCBTTerm.rel
+S/geoCBMTerm.rel
+S/geoCBTScn.rel
 S/geoCBTGfx.rel
-S/geoCBTActs.rel
+S/geoCBTMenu.rel
 S/geoCBTBufV.rel
-F/geoCBTFont1.rel
-F/geoCBTFont2rel
+F/geoCBMFont.rel
+;F/geoCBMFont2rel
 
-.mod	4
-.psect	VPRGbase
-S/geoCBTConn.rel
+;.mod	4
+;.psect	VPRGbase
+;S/geoCBTConn.rel
 
-.mod	5
-.psect	VPRGbase
-S/geoCBTXfer.rel
-MODxmodem.rel
-MODseqR.rel
-MODseqW.rel
+;.mod	5
+;.psect	VPRGbase
+;S/geoCBTXfer.rel
+;MODxmodem.rel
+;MODseqR.rel
+;MODseqW.rel
 
-.mod	6
-.psect	VPRGbase
-S/geoCBTBufF.rel
-MODseqR.rel
-MODseqW.rel
+;.mod	6
+;.psect	VPRGbase
+;S/geoCBTBufF.rel
+;MODseqR.rel
+;MODseqW.rel
 
 
 </pre></body></html>

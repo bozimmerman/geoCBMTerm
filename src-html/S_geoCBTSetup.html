@@ -15,7 +15,122 @@
 
 
 
-Setup:
+Setup:	ldw	R9,#$8400	; read the header part
+	jsr	GetFHdrInfo
+	cpx	#0
+	beq	10$
+	jmp	EnterDeskTop
+10$:	ldb	FlgNoDCD,#0	; first read header args
+	jsr	ReadArgs
+	jsr	Check128	; then fix modem driver
+	beq	20$
+	jsr	Ld64Drvr
+20$:	jsr	CreatRW	; now setup REU
+	beq	30$
+	inc	BuffEnable
+30$:	jsr	scnSetup	; clear screen
+	ldb	menuInit,#0	; flag un-setup menu
+	ldb	flgEcho,#1
+	ldb	flgANSI,#1
+	jsr	mdmSetup	; * Send modem init, and Floff
+	; other stuff
+
+	jmp	CBTTerm
+
+
+
+Check128:	lda	#$12
+	cmp	$c00f
+	bpl	10$
+	lda	$c013
+10$:	cmp	#$80
 	rts
+
+
+;** Read in any arguments
+ReadArgs:	ldw	A0,#$8100+160
+	ldy	#0
+10$:	lda	(A0),y
+	beq	99$
+	cmp	#'-'
+	bne	99$
+	iny
+	lda	(A0),y
+	cmp	#'d'
+	bne	20$
+	inc	FlgNoDCD
+20$:	cmp	#'D'
+	bne	21$
+	inc	FlgNoDCD
+21$:	nop
+90$:	iny
+	bne	10$
+99$:	rts
+
+
+Ld64Drvr:	lda	#1	; C64 DRIVER RECORD
+	sec
+	sbc	#1	; get t&s from table
+	asl	a
+	tay
+	lda	VPRGtabl,y
+	sta	R1L	; get t&s from table
+	lda	VPRGtabl+1,y
+	sta	R1H
+	ldw	R7,#$0400
+	ldw	R2,#$ffff
+	jsr	ReadFile	; read the module in
+	rts
+
+
+scnSetup:	ldb	txtTop,#$10	; screen def
+	ldb	txtBot,#199
+	ldw	txtLeft,#$00
+	ldw	txtRight,#319
+	mvw	txtRight,txtREnd	; last chars
+	ldb	curWidth+1,#0
+	sbw	curWidth,txtREnd
+	inw	txtREnd	
+	mvb	txtBot,txtBEnd	; bot row
+	inc	txtBEnd
+	sbb	curHeight,txtBEnd
+	mvb	COLOR_MATRIX,origColor
+	lda	#0
+	jsr	ClrTrmScn
+	jsr	UseSystemFont	; * for now
+	ldb	dispBufferOn,#ST_WR_FORE
+scnReset:	mvb	baseColor,curColor
+	jsr	CrsrTL	
+	mvb	txtXY+2,R1H
+	mvw	txtXY,R11
+	ldb	windowTop,#0	; necc for menu recover?
+	mvb	txtBot,windowBottom,
+	mvw	txtLeft,leftMargin
+	mvw	txtRight,rightMargin
+	rts
+
+
+CrsrTL:	mvb	txtTop,txtXY+2
+	ldw	colorLPtr,#COLOR_MATRIX+(40*2)
+	mvw	txtLeft,txtXY
+	mvw	colorLPtr,colorPPtr
+	rts
+
+
+mdmSetup:	ldb	A2L,#>RS232Buf	; input buffer
+	ldb	A2H,#$01;CLBfLen	; input buffer len pages
+	ldb	A3L,#$01	; 1200 baud
+	ldb	A3H,#$80	; RTSCTS Flow Control!
+	ldb	OutBuf,#0
+	jsr	JComInit
+	jsr	JPauSec
+	ldw	R0,#mdmInitStr
+	jsr	JComPutS
+	rts
+
+mdmInitStr:	.byte 13,"  atze0v1x1f0q0r1&p0i0",13,0
+
+
+
 
 </pre></body></html>

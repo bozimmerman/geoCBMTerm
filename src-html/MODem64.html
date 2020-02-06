@@ -12,19 +12,20 @@
 MODMODEM = 64
 
 ;* Jump table, to make it relocatable
-_ComInit:		jmp ComInit
-_ComUninst:	jmp ComUninst
-_ComReInit:	jmp ComReInit
-_ComDisable:	jmp ComDisable
-_ComEnable:	jmp ComEnable
-_ComFlon:		jmp ComFlon
-_ComFloff:		jmp ComFloff
-_ComOnline:	jmp ComOnline
-_ComSend:	jmp ComSend
-_ComSPut:		jmp ComSPut
-_BaudSet:		jmp BaudSet
-_IsNTSC:		jmp IsNTSC
-_ComGet:		jmp ComGet
+JComInit:		jmp ComInit
+JComUninst:	jmp ComUninst
+JComReInit:		jmp ComReInit
+JComDisable:	jmp ComDisable
+JComEnable:	jmp ComEnable
+JComFlon:		jmp ComFlon
+JComFloff:		jmp ComFloff
+JComOnline:	jmp ComOnline
+JComSend:		jmp ComSend
+JComSPut:		jmp ComSPut
+JBaudSet:		jmp BaudSet
+JIsNTSC:		jmp IsNTSC
+JPauSec:		jmp PauSec
+JComGet:		jmp ComGet
 
 .include MODmodem
 

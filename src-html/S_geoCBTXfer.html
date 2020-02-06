@@ -12,26 +12,28 @@
 .glbl
 .eqin
 
-
 .psect
 
+; ** jump table for VPRGbase+0, +3, etc
+	jmp	DoXUpload
+	jmp	DoXDownload
 
+
+
+
+XferInit:	mvw	JComSPut+1,XMOSPut+1
+	mvw	JComGet+1,XMOGet+1
+	mvw	JComOnline+1,XMOnline+1
+	mvw	JPauSec+1,XMOPause+1
+	rts
 
 XComReset:	jsr	XMOPause
-	jmp	ComReInit
+	jmp	JComReInit
 
-XFixDrive:	cpb	curDrive,VPRGdriv
-	bne	10$
-	rts
-10$:	lda	VPRGdriv
-	jsr	VPRGdev
-	jsr	VPRGok
-	rts
 
-DoXUpload:	jsr	GotoFirstMenu
-	jsr	SavColorScn
-	jsr	ScreenSafe
-	jsr	keyRestore
+
+
+DoXUpload:	jsr	XferInit
 	jsr	DoXUBox
 	beq	10$
 	rts
@@ -56,7 +58,7 @@ DoXUBox:
 	beq	11$
 	cmp	#$02	; cancelled?
 	bne	20$
-15$:	jsr	XferCncl
+15$:	jsr	MnuActDn
 	ldx	#$ff
 	rts
 20$:	cmp	#$06	; change disks?
@@ -73,10 +75,6 @@ DoXUBox:
 	beq	15$
 	ldx	#0
 	rts
-
-XferCncl:	jsr	XFixDrive
-	jsr	keySetup
-	jmp	ResColorScn	; <-- only if xfer not done
 
 PermFName:	.byte	$00
 
@@ -221,7 +219,7 @@ XUpload:	ldb	XMoreFlg,#$ff	; there is definitely more to get
 	jsr	scnReset	; will restore font
 	ldw	A2,#XUpErTxt
 	jsr	OKBox
-20$:	jsr	XFixDrive
+20$:	jsr	FixDrive
 	jsr	keySetup
 	rts
 
@@ -368,10 +366,7 @@ XAbortChk:
 	rts
 
 DoXDownload: 
-	jsr	GotoFirstMenu
-	jsr	SavColorScn
-	jsr	ScreenSafe
-	jsr	keyRestore
+	jsr	XferInit
 	ldb	XDnFType,#$02
 	ldw	FBOXtt0,#FBOXttt
 	ldw	FBOXtt1,#FBOXttt+4
@@ -401,7 +396,7 @@ DoXDBox:	ldw	A5,#XFilename
 	jsr	DoDlgBox
 	cbi	sysDBData,#$02	;was cancel hit?
 	bne	15$
-14$:	jsr	XferCncl	;back to start
+14$:	jsr	MnuActDn	;back to start
 	ldx	#$ff
 	rts
 15$:	cmp	#$06	;change disks
@@ -465,7 +460,7 @@ XDownload:	ldw	XBufWrPtr,#BACK_SCR_BASE
 	jsr	scnReset	; will restore font
 	ldw	A2,#XDnErTxt
 	jsr	OKBox
-20$:	jsr	XFixDrive
+20$:	jsr	FixDrive
 	jsr	keySetup
 	rts
 

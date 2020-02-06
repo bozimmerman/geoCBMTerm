@@ -15,13 +15,11 @@
 
 .psect
 
+; * the jump table, from VPRGbase+0,+3, etc
+	jmp	QConnect
+	jmp	QConnPhb
 
-
-QConnect:	jsr	GotoFirstMenu
-	jsr	SavColorScn
-	jsr	ScreenSafe
-	jsr	keyRestore
-	ldw	A2,#NewHost
+QConnect:	ldw	A2,#NewHost
 	ldy	#0
 	tya
 09$:	sta	(A2),y
@@ -76,11 +74,7 @@ QCDlgGfx:	jsr	i_GraphicsString	; i_GraphicsString
 	rts
 
 
-QConnPhb:	jsr	GotoFirstMenu
-	jsr	SavColorScn
-	jsr	ScreenSafe
-	jsr	ComDisable
-	jsr	keyRestore
+QConnPhb:
 10$:	ldw	R0,#VPRGaNam
 	jsr	OpenRecordFile
 	cpx	#0

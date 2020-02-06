@@ -51,6 +51,7 @@ XMO_OTH	= $02
 XMOSPut:	jmp ComSPut
 XMOGet:	jmp ComGet
 XMOnline:	jmp ComOnline
+XMOPause:	jmp PauSec
 
 ;****************************************
 ;* XMOrcvChk		X-Modem Receive (checksum)
@@ -413,24 +414,6 @@ XMOMinFlush:	jsr	CLL2xxRb
 	sta	XMOGood
 	jsr	XMOReTm
 	rts
-
-XMOPause:	lda	$01
-	pha
-	lda	#$35
-	sta	$01
-	lda	#0
-	sta	APITemp2
-10$:	lda	#0
-	sta	$dc08
-20$:	lda	$dc08
-	beq	20$
-	inc	APITemp2
-	cbi	APITemp2,#9	; almost a second
-	bcc	10$
-	pla
-	sta	$01
-	rts
-
 
 XMOgetKey:	tya
 	pha

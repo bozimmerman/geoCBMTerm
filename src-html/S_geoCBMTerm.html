@@ -29,22 +29,22 @@
 .glbl
 .endif
 
-curWidth = $8807
-
 .psect
 
 
-StartTelnet:	jsr	CreatRW
-	beq	10$
-	inc	BuffEnable
-10$:	jsr	scnSetup
-	ldb	flgEcho,#1
-	jsr	FixEcho
-	ldb	flgANSI,#1
+StartTerm:	lda	menuInit
+	bne	10$
+	ldw	A2,#0	; "About" refresh
+	ldw	A3,#DAdone	; DA refresh
+	ldw	A4,#DAinit	; DA init
+	ldw	A5,#AboutStrs
+	jsr	InitDaAb
+	jsr	DrawMenu	; draw the menu if not already
+10$:	jsr	FixCurFont
+	jsr	FixEcho	; fix menu options 
 	jsr	FixATerm
-	jsr	mdmSetup	; *
-	jsr	FixBaud
 	jsr	keySetup
+	mvw	colorPPtr,colorPtr
 	rts
 
 CleanExit:	jsr	PromptOff
@@ -54,89 +54,38 @@ CleanExit:	jsr	PromptOff
 	jmp	EnterDeskTop
 
 
-scnSetup:	ldb	txtTop,#$10	; screen def
-	ldb	txtBot,#199
-	ldw	txtLeft,#$00
-	ldw	txtRight,#319
-	mvw	txtRight,txtREnd	; last chars
-	ldb	curWidth+1,#0
-	sbw	curWidth,txtREnd
-	inw	txtREnd	
-	mvb	txtBot,txtBEnd	; bot row
-	inc	txtBEnd
-	sbb	curHeight,txtBEnd
-	mvb	COLOR_MATRIX,origColor
-	lda	#0
-	jsr	ClrTrmScn
-	jsr	UseSystemFont	; * for now
-	ldw	A2,#0	; "About" refresh
-	ldw	A3,#DAdone	; DA refresh
-	ldw	A4,#DAinit	; DA init
-	ldw	A5,#AboutStrs
-	jsr	InitDaAb
-	ldb	dispBufferOn,#ST_WR_FORE
-	jsr	DrawMenu
-scnReset:	jsr	FixFont80
-	mvb	baseColor,curColor
-	jsr	CrsrTL	
-	mvb	txtXY+2,R1H
-	mvw	txtXY,R11
-	ldb	windowTop,#0	; necc for menu recover?
-	mvb	txtBot,windowBottom,
-	mvw	txtLeft,leftMargin
-	mvw	txtRight,rightMargin
+StopTerm:	mvw	colorPtr,colorPPtr
+	jsr	SavColorScn
+	jsr	ScreenSafe
+	jsr	keyRestore
 	rts
 
-
-
-ClrTrmScn:	pha
-	lda	#0
-	sta	ansiDex
-	sta	ansiNBuf
-	jsr	SetPattern
-	pla
-	sta	R2L
-	mvb	txtBot,R2H
-	mvw	txtLeft,R3
-	mvw	txtRight,R4
-	ldb	dispBufferOn,#ST_WR_FORE|ST_WR_BACK
-	jsr	Rectangle
-	ldb	dispBufferOn,#ST_WR_FORE
-	ldb	baseColor,#(7*16)	; yellow on black
-	ldw	R1,#COLOR_MATRIX+(40*2)
-	ldw	R0,#$3e8-(40*2)	; set initial scrn color
-	mvb	baseColor,R2L
-	jsr	FillRam	; color the term screen
-	rts
-
-FixFont80:	ldw	R0,#GEOSFont
+FixCurFont:	ldw	R0,#GEOSFont
 	jsr	LoadCharSet
 	ldb	baselineOffset,#0
 	ldb	curWidth,#$04	; curWidth=realSize
 	rts
 
-AboutStrs:	.byte	24,"      geoTelnet 1.3",0
-	.byte	24,"  For C64Net WiFi Modem",0
-	.byte	24,"    By Bo Zimmerman",0
-	.byte	24,"      bo@zimmers.net",0
 
-mdmSetup:	ldb	A2L,#$00;>CLBuf	; input buffer
-	ldb	A2H,#$01;CLBfLen	; input buffer len pages
-	ldb	A3L,#$01	; 1200 baud
-	ldb	A3H,#$80	; RTSCTS Flow Control!
-	ldb	OutBuf,#0
-	jsr	ComInit
-	jsr	XMOPause
-	ldw	R0,#mdmInitStr
-	jsr	ComPutS
+
+CrsrTL:	mvb	txtTop,txtXY+2
+	ldw	colorLPtr,#COLOR_MATRIX+(40*2)
+	jsr	CrsrStLn
 	rts
 
-mdmDone:	jsr	ComDisable
-	jsr	ComUninst
+CrsrStLn:	mvw	txtLeft,txtXY
+	mvw	colorLPtr,colorPtr
 	rts
 
-mdmInitStr:	.byte 13,"  atze0v1x1f0q0r1&p0i0",13,0
+
+
+
 mdmDoneStr:	.byte 13,"  atzb1200",13,0
+
+mdmDone:	jsr	JComDisable
+	jsr	JComUninst
+	rts
+
 
 
 keySetup:	mvw	keyVector,savKeyVec
@@ -199,9 +148,9 @@ KeyComPut:	ldx	flgANSI
 	lda	KeyACt,x
 	pha
 	lda	#27
-	jsr	ComSPut
+	jsr	JComSPut
 	lda	#91
-	jsr	ComSPut
+	jsr	JComSPut
 	pla
 30$:	cmp	#$1d
 	bne	31$
@@ -212,7 +161,7 @@ KeyComPut:	ldx	flgANSI
 40$:	cmp	#$14
 	beq	39$
 	pha
-	jsr	ComSPut
+	jsr	JComSPut
 	pla
 	rts
 KeyACt:	.byte 16,65,17,66,8,68,30,67,0,0
@@ -241,21 +190,7 @@ SafeDraw:	pha
 
 
 
-DrawChar:	pha
-	lda	ansiDex
-	beq	11$
-	pla
-	jmp	AnsiCont
-11$:	lda	telnState
-	beq	13$
-	pla
-12$:	jmp	TelnCont
-13$:	pla
-	cmp	#27
-	bne	14$
-	jmp	AnsiStart
-14$:	cmp	#$ff
-	beq	12$
+DrawChar:	pla
 	cmp	#$0d
 	bne	15$
 	jmp	DrawCR
@@ -338,47 +273,6 @@ ClrColLn:	tya
 
 
 
-MyMoveData:	cpw	R0,R1
-	bcc	MyMoveBack
-	ldy	#0
-	lda	R2H
-	beq	20$
-10$:	lda	(R0),y
-	sta	(R1),y
-	iny
-	bne	10$
-	inc	R0H
-	inc	R1H
-	dec	R2H
-	bne	10$
-20$:	cpy	R2L
-	beq	30$
-	lda	(R0),y
-	sta	(R1),y
-	iny
-	bra	20$
-30$:	rts
-MyMoveBack:	adb	R2H,R0H
-	adb	R2H,R1H
-	ldy	R2L
-	beq	50$
-10$:	dey
-	lda	(R0),y
-	sta	(R1),y
-	tya
-	bne	10$
-50$:	dec	R0H
-	dec	R1H
-	lda	R2H
-	bne	60$
-	rts
-60$:	dey
-	lda	(R0),y
-	sta	(R1),y
-	tya
-	bne	60$
-	dec	R2H
-	bra	50$
 
 
 PutDel:	cwi	R11,#3	; todo: txtLeft
@@ -444,193 +338,21 @@ CrsrLt:	cpw	txtLeft,txtXY	; Cursor Backward
 	dew	colorPtr
 20$:	rts
 
-CrsrTL:	mvb	txtTop,txtXY+2
-	ldw	colorLPtr,#COLOR_MATRIX+(40*2)
-	jsr	CrsrStLn
-	rts
-
-CrsrStLn:	mvw	txtLeft,txtXY
-	mvw	colorLPtr,colorPtr
-	rts
-
-
-TelnCont:	sty	TelnOut+1
-	sta	TelnCC+1
-	lda	telnState
-	bne	TelnChPt
-	ldw	telnStPt,#Tel1Ch
-TelnOut:	ldy	#0
-	rts
-TelnChPt:	mvw	telnStPt,A2
-TelnLoop:	ldy	#$00
-	lda	(A2),y
-	bne	10$
-	sta	telnState	; no match, so done
-	jmp	TelnOut
-10$:	cmp	#$80	; $80 is an Always action
-	beq	TelnAct
-TelnCC:	cmp	#$ff
-	beq	TelnAct
-	avw	#3,A2
-	jmp	TelnLoop
-TelnAct:	iny
-	lda	(A2),y
-	sta	telnStPt
-	sta	TelNDo+1
-	iny
-	lda	(A2),y
-	sta	telnStPt+1
-	and	#$80
-	bne	10$
-	jmp	TelnOut
-10$:	lda	(A2),y
-	and	#$7f
-	sta	TelNDo+2
-	ldb	telnState,#0
-TelnDo:	jmp	TelnDo
-
-
-	; initial state machine
-Tel1Ch:	.byte 251, <Tel2Ch, >Tel2Ch; WILL
-	.byte 252, <Tel3Ch, >Tel3Ch; WONT
-	.byte 253, <Tel4Ch, >Tel4Ch; DO
-	.byte 254, <Tel5Ch, >Tel5Ch; DONT
-	.byte 250, <Tel6Ch, >Tel6Ch; SB
-	.byte	0,0,0
-	; WILL
-Tel2Ch:	.byte	24, <TelWi_TT, >TelWi_TT + $80; TERMTYPE
-	.byte	1, <TelWi_Echo, >TelWi_Echo + $80; ECHO
-	.byte	3, <TelWi_SGA, >TelWi_SGA + $80; Supp go ah
-	.byte	32, <TelWi_SO, >TelWi_SO + $80; Speed opt
-	.byte	$80, <TelWi_, >TelWi_	 + $80; everything else
-	.byte	0,0,0
-	; WONT
-Tel3Ch:	.byte	1, <TelWo_Echo, >TelWo_Echo + $80; echo
-	.byte	0,0,0	; nothing else to do
-	; DO
-Tel4Ch:	.byte	24, <TelDo_TT, >TelDo_TT + $80; TERMTYPE
-	.byte	1, <TelDo_Echo, >TelDo_Echo + $80; ECHO
-	.byte	31, <TelDo_NAWS, >TelDo_NAWS + $80; NAWS
-	.byte	3, <TelDo_SGA, >TelDo_SGA + $80; Supp go ah
-	.byte	32, <TelDo_SO, >TelDo_SO + $80; Speed opt
-	.byte	$80, <TelDo_, >TelDo_	 + $80; everything else
-	.byte	0,0,0
-	; DONT
-Tel5Ch:	.byte	1, <TelDn_Echo, >TelDn_Echo + $80; echo
-	.byte	0,0,0	; nothing else to do
-	; SB
-Tel6Ch:	.byte	$80, <TelSB_, >TelSB_ + $80; save sub-type
-	.byte 255, <Tel7Ch, >Tel7Ch	; received end maybe?
-	.byte 0,0,0
-TelSBCh:	.byte 255, <Tel7Ch, >Tel7Ch	; maybe the end
-	.byte	$80, <TelSBCh, >TelSBCh; keep reading
-	.byte	0,0,0
-Tel7Ch:	.byte	240, <TelSB_Do, >TelSB_Do + $80; received end of SB!
-	.byte	$80, <TelSBCh, >TelSBCh; anything else, keep going
-	.byte	0,0,0
-
-
-TelSB_:	lda	TelnCC+1
-	sta	TelSB_Do+1
-	ldw	telnStPt,#TelSBCh
-	jmp	TelnOut
-
-TelSB_Do:	lda	#$00
-	cmp	#24
-	bne	10$
-	ldy	#0
-05$:	lda	TelSBttStr,y
-	jsr	QOutC
-	iny
-	cpy	#10
-	bcc	05$
-	jmp	TelnOut
-10$:	cmp	#32
-	bne	20$
-	ldy	#0
-15$:	lda	TelSBsoStr,y
-	jsr	QOutC
-	iny
-	cpy	#15
-	bcc	15$
-	jmp	TelnOut
-20$:	jmp	TelnOut
-TelSBttStr:	.byte	255,250,24,0,'a','n','s','i',255,240,0
-TelSBsoStr:	.byte	255,250,32,0,'1','2','0','0',44,'1','2','0','0',255,240,0
 
 
 
-TelDo_NAWS:	ldy	#0
-10$:	lda	TelWiNaStr,y
-	jsr	QOutC
-	iny
-	cpy	#12
-	bcc	10$
-	jmp	TelnOut
-TelWiNaStr:	.byte	255,251,31,255,250,31,0,80,0,23,255,240,0
-
-TelWi_SO:
-TelWi_SGA:
-TelWi_TT:	mvb TelnCC+1,TelDoAAStr+2
-	ldw	R0,#TelDoAAStr
-	jsr	QOutStr
-	jmp	TelnOut
-TelDoAAStr:	.byte	255,253,24,0
-
-TelWi_:	lda	TelnCC+1
-	sta	TelDotStr+2
-	ldw	R0,#TelDotStr
-	jsr	QOutStr
-	jmp	TelnOut
-TelDotStr:	.byte	255,254,0,0
-
-TelWo_Echo:	ldb	TelWDEcStr+1,254
-	jmp	TelWD_Echo
-TelDn_Echo:	ldb	TelWDEcStr+1,252
-TelWD_Echo:	ldb	flgEcho,#1
-	jsr	FixEcho
-	ldw	R0,#TelWDEcStr
-	jsr	QOutStr
-	jmp	TelnOut
-TelWDEcStr:	.byte	255,253,1,0
-
-TelDo_SGA:
-TelDo_SO:
-TelDo_TT:	mvb TelnCC+1,TelWiAAStr+2
-	ldw	R0,#TelWiAAStr
-	jsr	QOutStr
-	jmp	TelnOut
-TelWiAAStr:	.byte	255,251,24,0
-
-TelDo_:	mvb	TelnCC+1, TelWotStr+2
-	ldw	R0,#TelWotStr
-	jsr	QOutStr
-	jmp	TelnOut
-TelWotStr:	.byte	255,252,0,0
-
-TelWi_Echo:	ldb	TelWDEcStr+1,#253
-	jmp	TelW2_Echo
-TelDo_Echo:	ldb	TelWDEcStr+1,#251
-TelW2_Echo:	ldb	flgEcho,#0
-	jsr	FixEcho
-	ldw	R0,#TelWDEcStr
-	jsr	QOutStr
-	jmp	TelnOut
 
 
-ComPutS:	ldy	#0	; *
-10$:	lda	(R0),y
-	beq	20$
-	jsr	ComSPut
-	iny
-	bne	10$
-20$:	rts
+
+
+
+
 
 QOutC:	sty	QOutC2+1
 	inc	OutBuf
 	ldy	OutBuf
 	sta	OutBuf,y
-	jsr	ComFloff
+	jsr	JComFloff
 QOutC2:	ldy	#0
 	rts
 
@@ -649,13 +371,13 @@ QFlush:	lda	OutBuf
 	rts
 10$:	ldy	#1
 20$:	lda	OutBuf,y
-	jsr	ComSPut
+	jsr	JComSPut
 	iny
 	cpy	OutBuf
 	bcc	20$
 	beq	20$
 	ldb	OutBuf,#0
-	jsr	ComFlon
+	jsr	JComFlon
 	rts
 	
 
@@ -663,7 +385,7 @@ QFlush:	lda	OutBuf
 MainLp:	mvb	mdmRdRate,A5L
 	mvb	txtXY+2,R1H
 	mvw	txtXY,R11
-MainLp2:	jsr	ComGet
+MainLp2:	jsr	JComGet
 	bcc	20$
 	lda	flgDoBg
 	beq	10$
@@ -707,28 +429,6 @@ BufferFlg:	.byte 0
 	rts
 
 
-txtTop:	.byte	$10	; first pixel row of terminal
-txtBot:	.byte	199	; last pixel row of terminal
-txtLeft:	.word	0	; leftmost pixel col of term
-txtRight:	.word	319	; rightmost pixel col of term
-txtBEnd:	.byte	199	; 
-txtREnd:	.word	312
-telnStPt:	.byte	0	; combines with state as ptr
-telnState:	.byte	0	; combines with above as ptr
-
-.ramsect
-mdmRdRate:	.block	1
-savKeyVec:	.block	2
-txtXY:	.block	3
-flgDoBg:	.block	1
-flgEcho:	.block	1
-flgANSI:	.block	1
-origColor:	.block	1
-baseColor:	.block	1
-curColor:	.block	1
-colorLPtr:	.block	2
-colorBBuf:	.block	$03e9-(40*2)
-outBuf:	.block	256
 ; that's all folks!
 
 </pre></body></html>
