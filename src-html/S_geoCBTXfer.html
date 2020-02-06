@@ -227,9 +227,6 @@ XAbortChk:
 DoXDownload: 
 	jsr	XferInit
 	ldb	XDnFType,#$02
-	ldw	FBOXtt0,#FBOXttt
-	ldw	FBOXtt1,#FBOXttt+4
-	ldb	FBOXnoob,#15	; activate buttons	
 	jsr	DoXDBox
 	beq	10$
 	jmp	CBTTerm

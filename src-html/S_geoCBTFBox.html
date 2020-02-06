@@ -13,9 +13,9 @@
 .psect
 
 
+DoVSBox:
 DoXUBox:
-05$:	ldb	FBOXnod1,#0
-	ldb	FBOXnoo2,#$06	; reset disk icon
+05$:	ldb	FBOXnoo2,#$06	; reset disk icon
 	cpb	curDrive,VPRGdriv
 	bne	10$
 	ldb	FBOXnoo2,#0
@@ -74,8 +74,7 @@ FBOXdcon:	.word FBOXdmag
 	.byte	$06, $10
 	.word FBOXswdv
 
-UpBxGfx:	;jsr	ReDoMenu	; menu code not avail
-	mvw	leftMargin,R3
+UpBxGfx:	mvw	leftMargin,R3
 	mvw	rightMargin,R4
 	ldb	R11L,#$0f
 	lda	#0
@@ -152,7 +151,14 @@ FBOXopen:	ldw	A6,#$8300	;Set start of filename grid
 	rts
 
 
-DoXDBox:	ldw	A5,#XFilename
+DoVRBox:	ldb	FBOXgfx,#0	; disable boxes
+	ldw	FBOXtt0,#FBOXtt3; xfer setup BLANK options
+	ldw	FBOXtt1,#FBOXtt3
+	jmp	DoXDBox2
+DoXDBox:	ldb	FBOXgfx,#5	; enable boxes
+	ldw	FBOXtt0,#FBOXttt		; xfer setup PRG SEQ options
+	ldw	FBOXtt1,#FBOXttt+4
+DoXDBox2:	ldw	A5,#XFilename
 	ldy	#0
 	tya
 04$:	sta	(A5),y	; clear the filename
@@ -189,8 +195,7 @@ DoXDBox:	ldw	A5,#XFilename
 	rts
 
 
-FBOXmvnm:
-	ldx	#A6	;discover the current drives
+FBOXmvnm:	ldx	#A6	;discover the current drives
 	jsr	GetPtrCurDkNm	;name. should this be a routine?
 	ldy	#$00
 17$:	lda	(A6),y	;copy disk name to buffer...
@@ -210,38 +215,38 @@ FBOXmvnm:
 FBOXcbox:	.byte	$80 | $01
 	.byte	11	;add text
 	.byte	$16,$11
-	.word	FBOXtxt4
+	.word FBOXtxt4
 	.byte	12
 	.byte	$43,$11
 	.byte	A6
 	.byte	11	;add text
 	.byte	$16,$22
-	.word	FBOXtxt5
+	.word FBOXtxt5
 	.byte	13	;GetString
 	.byte	$1a,$26	;XOffset.Yalso
 	.byte	A5	
 	.byte	16	;maximum # of chars to accept.
 	.byte	$02,$10,$47	;Cancel icon
-FBOXnod1:	.byte	18	;drive icon
-	.byte	$09,$47
-	.word	FBOXdcn2
-FBOXnod2:	.byte	$06,$02,$47	;DISK icon
-FBOXnoob:	.byte	15	; do graphics table or 0 to disable
-	.word	FBOXgfx
 	.byte	11	;add text
 	.byte	$1e,$40
-FBOXtt0:	.word	FBOXttt
+FBOXtt0:	.word FBOXttt
 	.byte	11	;add text
 	.byte	$3d,$40
-FBOXtt1:	.word	FBOXttt+4
+FBOXtt1:	.word FBOXttt+4
+	.byte	15	; do graphics table or 0 to disable
+	.word FBOXgfx
 	.byte	17
-	.word	FBOXclk
+	.word FBOXclk
+FBOXnod1:	.byte	18	;drive icon
+	.byte	$09,$47
+	.word FBOXdcn2
+FBOXnod2:	.byte	$06,$02,$47	;DISK icon
 	.byte	0	;end of defintion
 
-FBOXdcn2:	.word	FBOXdmag	;graphic location
+FBOXdcn2:	.word FBOXdmag	;graphic location
 	.word	0	;leave this at 0
 	.byte	$06,$10	;width, set below
-	.word	FBOXswdv	;location of action routine
+	.word FBOXswdv	;location of action routine
 
 FBOXgfx:	.byte	5,0	; pattern 0
 	.byte	1,83,0,88	; movepento
@@ -256,17 +261,17 @@ XSEQgfx:	.byte	1,115,0,88	; movepento
 FBOXgfnx:	.byte	0
 FBOXttt:	.byte	"PRG",0,"SEQ",0
 FBOXtt2:	.byte	"ansi",0,"petscii",0
-
-
-
+FBOXtt3:	.byte	32,0
 
 FBOXdmag:
 <img src="00064.png" />
 
 FBOXclk:	lda	mouseData
+	beq	11$
+10$:	rts
+11$:	lda	FBOXgfx
 	beq	10$
-	rts
-10$:	cbi	XDnFType,#$02
+	cbi	XDnFType,#$02
 	bne	20$
 	mvb	XSEQgfx+3,R2L
 	mvb	XSEQgfx+7,R2H

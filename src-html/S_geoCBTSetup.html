@@ -21,6 +21,9 @@ Setup:	ldw	R9,#$8400	; read the header part
 	beq	10$
 	jmp	EnterDeskTop
 10$:	ldb	FlgNoDCD,#0	; first read header args
+	ldb	flgEcho,#0	; echo on default
+	ldb	flgANSI,#0	; ansi off default
+	ldb	BaudCode,#1	; 1200 baud default
 	jsr	ReadArgs
 	jsr	Check128	; then fix modem driver
 	beq	20$
@@ -30,9 +33,6 @@ Setup:	ldw	R9,#$8400	; read the header part
 	inc	BuffEnable
 30$:	jsr	scnSetup	; clear screen
 	ldb	menuInit,#0	; flag un-setup menu
-	ldb	flgEcho,#1	; echo on default
-	ldb	flgANSI,#0	; ansi off default
-	ldb	BaudCode,#1	; 1200 baud default
 	jsr	mdmSetup	; * Send modem init, and Floff
 	; other stuff
 	jmp	CBTTerm
@@ -43,21 +43,47 @@ Setup:	ldw	R9,#$8400	; read the header part
 ReadArgs:	ldw	A0,#$8100+160
 	ldy	#0
 10$:	lda	(A0),y
-	beq	99$
-	cmp	#'-'
-	bne	99$
-	iny
-	lda	(A0),y
+	bne	13$
+	rts
+13$:	iny
+	cmp	#'-'	; if a switch, go do that
+	beq	15$
+	cmp	#'='	; if init seq, do that now
+	bne	10$	; if neither, next char
+	jmp	ReadInitStr
+15$:	lda	(A0),y	; get the switch char
+	bne	16$
+	rts
+16$:	jsr	ReadSwitch
+	bra	10$
+
+ReadSwitch:	ora	#$20	; always lowercase
 	cmp	#'d'
-	bne	20$
-	inc	FlgNoDCD
-20$:	cmp	#'D'
 	bne	21$
 	inc	FlgNoDCD
-21$:	nop
-90$:	iny
-	bne	10$
-99$:	rts
+21$:	cmp	#'e'
+	bne	22$
+	inc flgEcho
+22$:	cmp	#'a'
+	bne	23$
+	inc	flgANSI
+23$:	cmp	#'b'
+	bne	30$
+	inc	BaudCode
+30$:	rts
+
+ReadInitStr:	ldx	#$ff
+12$:	inx		; loop through rest of block
+	lda	(A0),y
+	beq	13$
+	iny
+	sta	mdmInitStr+5,x
+	bra	12$
+13$:	lda	#13	; close the new init str
+	sta	mdmInitStr+6,x
+	lda	#0
+	sta	mdmInitStr+7,x
+	rts
 
 
 Ld64Drvr:	lda	#1	; C64 DRIVER RECORD
@@ -120,7 +146,8 @@ mdmSetup:	ldb	A2L,#>RS232Buf	; input buffer
 	jsr	JComFloff
 	rts
 
-mdmInitStr:	.byte 13,"  atze0v1x1f0q0r1&p0i0",13,0
+mdmInitStr:	.byte 13,"  atze1v1x1f0q0r1&p1i0",13,0
+	.byte	"                      ",0
 
 
 

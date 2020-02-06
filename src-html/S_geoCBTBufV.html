@@ -7,9 +7,10 @@ doBufView:	jsr	GotoFirstMenu
 	jsr	CNCLBox
 	jmp	MnuActDn	; we're done.
 10$:	jsr	ResColorScn	; <-- only if xfer not done
-	jsr	CrsrTL	; Screen clear and top-left
-	lda	txtTop
-	jsr	ClrTrmScn	; lda from prev MATTERS
+	jsr	ClearScn	; Screen clear and top-left
+	jsr	CrsrTL
+	mvb	R1H,txtXY+2
+	mvw	R11,txtXY
 20$:	jsr	GetRByte
 	cpx	#0
 	bne	90$
