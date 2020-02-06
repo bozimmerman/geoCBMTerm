@@ -44,8 +44,21 @@ StartTerm:	lda	menuInit
 10$:	jsr	FixCurFont
 	jsr	FixEcho	; fix menu options 
 	jsr	FixATerm
-	jsr	keySetup
+	jsr	Check128
+	bne	20$
+	lda	#$38	; flag for C128
+	sta	CT64128A
+	sta	CT64128B
+20$:	jsr	keySetup
+	jsr	JComEnable	; restore disabled modem driver
 	mvw	colorPPtr,colorPtr
+	rts
+
+Check128:	lda	#$12
+	cmp	$c00f
+	bpl	10$
+	lda	$c013
+10$:	cmp	#$80
 	rts
 
 CleanExit:	jsr	PromptOff
@@ -133,7 +146,7 @@ KeyPRtn:	lda	keyData
 20$:	jsr	SafeDraw
 50$:	lda	keyData
 	jsr	KeyComPut
-99$:	rts
+	rts
 
 KeyComPut:	ldx	flgANSI
 	beq	30$
@@ -191,7 +204,7 @@ SafeDraw:	pha
 
 
 
-DrawChar:	pla
+DrawChar:	;pla
 	cmp	#$0d
 	bne	15$
 	jmp	DrawCR
@@ -411,9 +424,14 @@ MainLp2:	jsr	JComGet
 	rts
 20$:	tax
 	ldb	A9L,#0
-	phb	BANK_REG
+CT64128A:	.byte	$18	; clc=64, sec=$38
+	bcc	10$
+	phb	BANK_REG	; c128 save
 	ldb	BANK_REG,#BANK_vSTD
-	txa
+	bne	20$
+10$:	phb	$01	; c64 save
+	ldb	$01, #$30
+20$:	txa
 	.byte	$a2	; ldx immediate
 BufferFlg:	.byte 0
 	beq	25$
@@ -421,8 +439,12 @@ BufferFlg:	.byte 0
 	jsr	PutRByte
 	pla
 25$:	jsr	DrawChar
+CT64128B:	.byte	$18		; clc=64, sec=$38
+	bcc	10$
 	plb	BANK_REG
-	dec	A5L
+	bra	20$
+10$:	plb	$01
+20$:	dec	A5L
 	beq	30$
 	jmp	MainLp2
 30$:	mvb	R1H,txtXY+2

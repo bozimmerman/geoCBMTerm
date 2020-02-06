@@ -34,7 +34,9 @@ Setup:	ldw	R9,#$8400	; read the header part
 	ldb	flgANSI,#1
 	jsr	mdmSetup	; * Send modem init, and Floff
 	; other stuff
-
+40$:	lda	CLL2Busy
+	bmi	40$	; clear the current byte and 
+	jsr	JComDisable	; disable the modem
 	jmp	CBTTerm
 
 
