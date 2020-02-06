@@ -1,0 +1,60 @@
+<!DOCTYPE html><html><head><title>Untitled</title></head><body><pre>
+;*****************************
+;*
+;*      geoCBMTerm
+;*
+;*      (C) 2018 Bo Zimmerman
+;*
+;*****************************
+.output	geoCBMTerm
+.header	H/geoCBMTerm.rel
+
+.vlir
+
+.psect	$0400
+MODem128.rel	; is replaced by smaller MODem64
+APIcommon.rel
+MODdaAB.rel
+MODscrn.rel	; dammit, everyone uses it anyway...
+MODreuX.rel
+S/geoCBTStart.rel	; * Actual start of program!
+S/geoCBTMenu.rel
+; insert more here
+MODvPrg.rel
+
+.mod	1
+.psect	$0400
+MODem64.rel	; replaces larger MODem128.rel in base
+
+.mod	2
+.psect	VPRGbase
+S/geoCBTSetup.rel
+
+.mod	3
+.psect	VPRGbase
+S/geoCBTTerm.rel
+S/geoCBTGfx.rel
+S/geoCBTActs.rel
+S/geoCBTBufV.rel
+F/geoCBTFont1.rel
+F/geoCBTFont2rel
+
+.mod	4
+.psect	VPRGbase
+S/geoCBTConn.rel
+
+.mod	5
+.psect	VPRGbase
+S/geoCBTXfer.rel
+MODxmodem.rel
+MODseqR.rel
+MODseqW.rel
+
+.mod	6
+.psect	VPRGbase
+S/geoCBTBufF.rel
+MODseqR.rel
+MODseqW.rel
+
+
+</pre></body></html>
