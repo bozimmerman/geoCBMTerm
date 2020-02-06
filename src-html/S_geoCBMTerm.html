@@ -128,12 +128,15 @@ KeyPRtn:	lda	keyData
 	bne	10$
 99$:	rts
 10$:	tax		; start key press process
-	lda	flgCNTRL	; check for control key
-	bne	11$
+	jsr	ChkOnLn2
+	beq	13$
+	mvb	rvtEcho,flgEcho
+13$:	lda	flgCNTRL	; check for control key
+	bne	15$
 	lda	GOA2PET,x	; no cntrl key, so nrml lookup
 	beq	99$
 	bne	20$
-11$:	txa		; cntrl key, so filter, then..
+15$:	txa		; cntrl key, so filter, then..
 	and	#$7f
 	tax
 	lda	CTL2PET,x	; do special table lookup
@@ -491,7 +494,8 @@ NextBLp:	jsr	JComGet
 	mvw	R11,txtXY
 	jmp	BuffFlush	
 10$:	tax
-MainDrCh:	ldb	A9L,#0	; main draw char = .x
+MainDrCh:	stx	lastByte	; store for xfers
+	ldb	A9L,#0	; main draw char = .x
 CT64128A:	.byte	$18	; clc=64, sec=$38, C128 chk
 	bcc	10$
 	phb	BANK_REG	; c128 save

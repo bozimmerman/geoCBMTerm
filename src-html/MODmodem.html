@@ -69,6 +69,7 @@ BANK_vSTD = $30
 ;********************************
 ComInit:	mvb A2L,CLL2B1+2
 	mvb A2L,CLL2B2+2
+	mvb A2L,CLL2B3+2
 	jsr CLL2xxRb
 	lda A3L
 	jsr CLL2BSet
@@ -491,7 +492,13 @@ CLL2B2:	lda $5f00,y
 	tay
 40$:	lda CLL2Byte
 	clc 
-	rts 
+	rts
+
+ComPush:	ldy CLL2BfWdx
+CLL2B3:	sta $5f00,y
+	inc CLL2BfWdX
+	rts
+	
 
 ;**********************************
 ;* ComFlon	Turn on incoming data by 

@@ -40,7 +40,7 @@ QConnect:	ldw	A2,#NewHost
 
 
 QDoConn:	jsr	JComEnable
-	jsr	JComFlon
+	jsr	JComFloff
 	mvb	baseColor,curColor
 	ldw	R0,#QConnCmd
 	jsr	ComPutS
@@ -54,7 +54,6 @@ QDoConn:	jsr	JComEnable
 	jsr	ComPutS
 	;ldw	R0,#QConnRcm	; removed 
 	;jsr	DrawStr
-	jsr	JComFloff
 	rts
 	
 QConnCmd:	.byte	13,10,"atd",34,0
@@ -330,7 +329,13 @@ NewPhb:	jsr	ClrNamHost
 	beq	30$
 	lda	NewHost
 	beq	30$
-	jsr	MkNewHost
+	ldb	NewEcho,#0
+	ldw	A2,#NPhbTxt1
+	jsr	YNBox	; ask the echo question
+	cbi	sysDBData,#$04	; did they click no?
+	beq	20$
+	inc	NewEcho
+20$:	jsr	MkNewHost
 30$:	rts
 
 ClrNamHost:	ldw	A2,#NewName
@@ -354,7 +359,7 @@ NPhbDat:	.byte	$01	; size flag, and shadow pattern
 	.word QCDlgGfx
 	.byte	$00	; end of table
 NPhbTxt00:	.byte	$18,"Enter a name for this connection",27,0
-
+NPhbTxt1:	.byte	$18,"Enable Local Echo on connect?",27,0	
 
 OldPhb:	jsr	LdSelPhb	; already does clrnamhost
 	beq	10$
@@ -377,7 +382,10 @@ OldPhb:	jsr	LdSelPhb	; already does clrnamhost
 	inx
 	iny
 	bne	40$
-45$:	ldw	A2,#NewName
+45$:	iny
+	lda	(A1),y
+	sta	NewEcho
+	ldw	A2,#NewName
 	ldw	R0,#NPhbDat
 	jsr	DoDlgBox	; call DoDlgBox and leave!
 	lda	sysDBData
@@ -393,9 +401,14 @@ OldPhb:	jsr	LdSelPhb	; already does clrnamhost
 	beq	90$
 	lda	NewHost
 	beq	90$
-	jsr	SetSelPhR
+	ldb	NewEcho,#0
+	ldw	A2,#NPhbTxt1
+	jsr	YNBox	; ask the echo question
+	cbi	sysDBData,#$04	; did they click no?
+	beq	60$
+	inc	NewEcho
+60$:	jsr	SetSelPhR
 	jsr	MkOldHost
-	rts
 90$:	rts		; * do something special?
 
 
@@ -459,14 +472,16 @@ OpenPhNm:	jsr	LdSelPhb
 	inx
 	iny
 	bne	25$
-30$:	jsr	CloseRecordFile
+30$:	iny
+	lda	(R0),y
+	sta	flgEcho
+	jsr	CloseRecordFile
 	jsr	ComEnable
 	jsr	QDoConn
 	jmp	CBTTerm
 
 
-MkNewHost:
-	mvb	PhPgDims,A2H
+MkNewHost:	mvb	PhPgDims,A2H
 	avb	#$07,A2H
 	ldw	PhPage,#0
 	jsr	NextPhNm
@@ -499,10 +514,13 @@ MkOldHost:	ldw	R1,#NewName
 	ldw	R1,#NewHost
 23$:	lda	(R1),y
 	sta	(R0),y
-	beq	WrCurPhBlk
+	beq	24$
 	inw	R0
 	inw	R1
 	bra	23$
+24$:	inw	R0
+	lda	NewEcho
+	sta	(R0),y	
 WrCurPhBlk:	ldw	R2,#$00fe
 	ldw	R7,#PhPgBlk
 	jsr	WriteRecord
@@ -514,8 +532,7 @@ WrCurPhBlk:	ldw	R2,#$00fe
 
 
 
-MkNewHBlk:	
-	jsr	AppendRecord
+MkNewHBlk:		jsr	AppendRecord
 	cpx	#0
 	beq	10$
 	rts
@@ -660,9 +677,10 @@ PhMkR0:	ldw	R0,#PhPgBlk
 	rts
 
 .ramsect
-NewName:	.block 30
-NewHost:	.block 63
+NewName:	.block 30	; new phonebook entry name
+NewHost:	.block 63	; new phonebook entry host
 EndOfNames:	.block 1
+NewEcho:	.block 1	; new phonebook entry echo
 WinSave:	.block 6
 PhPage:	.block 2
 PhPgTnS:	.block 2

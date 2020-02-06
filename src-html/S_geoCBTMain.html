@@ -218,25 +218,27 @@ txtREnd:	.word	312
 
 ; * Here be Global Variables
 .ramsect
-BaudCode:	.block	1
-FlgNoDCD:	.block	1
-menuInit:	.block	1
-BuffEnable:	.block	1
-mdmRdRate:	.block	1
-savKeyVec:	.block	2
-txtXY:	.block	3
+lastByte:	.block	1	; last byte processed
+BaudCode:	.block	1	; 0=300, 1=1200, 2=2400, etc
+FlgNoDCD:	.block	1	; 1 to ignore DCD signal
+menuInit:	.block	1	; 1 if menu initialized
+BuffEnable:	.block	1	; 1 to buffer keystrokes
+mdmRdRate:	.block	1	; num modem read loops
+savKeyVec:	.block	2	; saved keyPress vector
+txtXY:	.block	3	; X word, and Y col
 flgDoBg:	.block	1	; screen background update flg
-flgEcho:	.block	1
-flgANSI:	.block	1
-flgUP:	.block	1
-flgREV:	.block	1
-fontPtr:	.block	2
+rvtEcho:	.block	1	; revert echo val when offline
+flgEcho:	.block	1	; local echo
+flgANSI:	.block	1	; ascii=0, ANSI=1
+flgUP:	.block	1	; C= PETSCII uppcase Mode
+flgREV:	.block	1	; C= PETSCII reverse Mode
+fontPtr:	.block	2	; pointer to current font table
 origColor:	.block	1
 baseColor:	.block	1
-curColor:	.block	1
+curColor:	.block	1	; current text color next char
 colorLPtr:	.block	2
 colorPPtr:	.block	2	; saved previous color pointer
-colorBBuf:	.block	$03e9-(40*2)
+colorBBuf:	.block	$03e9-(40*2)	; saved color screen ALL
 outBuf:	.block	256
 
 </pre></body></html>

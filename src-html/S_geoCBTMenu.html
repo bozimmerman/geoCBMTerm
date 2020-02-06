@@ -349,11 +349,13 @@ doXDownload:	jsr	GotoFirstMenu
 
 doEchoOn:	lda	#$01
 	sta	flgEcho
+	sta	rvtEcho
 	jsr	FixEcho
 	jmp	GotoFirstMenu
 
 doEchoOff:	lda	#$00
 	sta	flgEcho
+	sta	rvtEcho
 	jsr	FixEcho
 	jmp	GotoFirstMenu
 
@@ -368,8 +370,6 @@ FixEcho:	lda	#32
 10$:	lda	#42
 	sta	MnuTxt0f+1
 	rts
-
-
 
 
 doANSIOn:	lda	#$01

@@ -21,7 +21,8 @@ Setup:	ldw	R9,#$8400	; read the header part
 	beq	10$
 	jmp	EnterDeskTop
 10$:	ldb	FlgNoDCD,#0	; first read header args
-	ldb	flgEcho,#0	; echo on default
+	ldb	flgEcho,#1	; echo on default
+	sta	rvtEcho
 	ldb	flgANSI,#0	; ansi off default
 	ldb	BaudCode,#1	; 1200 baud default
 	jsr	ReadArgs
@@ -63,7 +64,8 @@ ReadSwitch:	ora	#$20	; always lowercase
 	inc	FlgNoDCD
 21$:	cmp	#'e'
 	bne	22$
-	inc flgEcho
+	ldb	flgEcho,#0
+	sta	rvtEcho
 22$:	cmp	#'a'
 	bne	23$
 	inc	flgANSI
@@ -141,12 +143,12 @@ mdmSetup:	ldb	A2L,#>RS232Buf	; input buffer
 	ldb	OutBuf,#0
 	jsr	JComInit
 	jsr	JPauSec
+	jsr	JComFloff	; echo is unwanted!
 	ldw	R0,#mdmInitStr
 	jsr	JComPutS
-	jsr	JComFloff
 	rts
 
-mdmInitStr:	.byte 13,"  atze1v1x1f0q0r1&p1i0",13,0
+mdmInitStr:	.byte 13,"  atze0v1x1f0q0r1&p1i0",13,0
 	.byte	"                      ",0
 
 

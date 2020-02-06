@@ -52,6 +52,7 @@ XMOSPut:	jmp ComSPut
 XMOGet:	jmp ComGet
 XMOnline:	jmp ComOnline
 XMOPause:	jmp PauSec
+XMOBufR:	jmp CLL2xxRb
 
 ;****************************************
 ;* XMOrcvChk		X-Modem Receive (checksum)
@@ -225,15 +226,15 @@ XMOExit:	ldx	XMOAbort
 ;*
 ;********************************
 
-XMOsend:	ldb	XMOUpDn,#0
-	jsr	XMOClear
-	jsr	XMOBufFlush
-	jsr	XMOgosCrc
-	mvw	A2,XMOSsVec+1
+XMOsend:	ldb	XMOUpDn,#0	; flag for upload
+	jsr	XMOClear	; reset all the vars
+	;jsr	XMOBufFlush	; this makes no sense!
+	jsr	XMOgosCrc	; default CRC setup
+	mvw	A2,XMOSsVec+1	; setup our vectors
 	mvw	A3,XMOSnVec+1
 	mvw	A4,XMOErVec+1
 	mvw	A5,XMOabVec+1
-	jmp	XMOsendStart
+	jmp	XMOsendStart	; start the upload
 
 XMOSsVec:	jmp	XMONada	; prepare 128 bytes
 XMOSnVec:	jmp	XMONada	; send 1 byte
@@ -312,7 +313,7 @@ XMOsendStart:	jsr	XMOReTm
 	bne	30$
 	lda	XMOClock
 	bne	40$
-	beq	10$
+29$:	beq	10$
 30$:	jmp	XMOXAbort
 32$:	jsr	XMOgosCrc
 	bra	35$
@@ -322,8 +323,15 @@ XMOsendStart:	jsr	XMOReTm
 40$:	inc	XMOErrors
 	jsr	XMOErVec
 	jsr	XMOPause
-	bra	10$	; jmp	XMOcontSend
-50$:	inc	XMOBlock
+	lda	XMOBlock
+	beq	10$
+	jsr	XMOBufR
+	jmp	XMOcontSend
+50$:	lda	XMOBlock
+	bne	51$
+	ldb	XMOErrors,#0
+	jsr	XMOBufR
+51$:	inc	XMOBlock
 	lda	XMOIOStat
 	beq	80$
 	ldy	#0
@@ -420,7 +428,7 @@ XMOBufFlush:	ldy	#0
 	iny
 	cpy	#$85
 	bcc	10$
-XMOMinFlush:	jsr	JComBufR
+XMOMinFlush:	;jsr	XMOBufR	; TODO: could this be a prob?
 	lda	#0
 	sta	XMOBufBit
 	sta	XMOGood

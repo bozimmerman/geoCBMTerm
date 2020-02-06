@@ -25,11 +25,12 @@ XferInit:	mvw	JComSPut+1,XMOSPut+1
 	mvw	JComGet+1,XMOGet+1
 	mvw	JComOnline+1,XMOnline+1
 	mvw	JPauSec+1,XMOPause+1
+	mvw	JComBufR+1,XMOBufR+1
 	rts
 
 XComReset:	jsr	XMOPause
-	jmp	JComReInit
-
+	jsr	JComReInit
+	jmp	JComBufR
 
 
 
@@ -60,6 +61,8 @@ XUpload:	ldb	XMoreFlg,#$ff	; there is definitely more to get
 10$:	jsr	XComReset
 	jsr	UseSystemFont
 	jsr	XUpBox
+	lda	lastByte
+	jsr	JComPush
 	ldw	A2,#XUpFillBuf
 	ldw	A3,#XUpRead
 	ldw	A4,#XUpBadBlk
