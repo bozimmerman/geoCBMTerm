@@ -17,6 +17,7 @@ APIcommon.rel
 MODdaAB.rel
 MODscrn.rel	; dammit, everyone uses it anyway...
 MODreuX.rel
+S/geoCBTScn.rel	; everyone also uses this
 S/geoCBTMain.rel	; * Actual start of program!
 MODvPrg.rel
 
@@ -27,12 +28,10 @@ MODem64.rel	; replaces larger MODem128.rel in base
 .mod	2
 .psect	VPRGbase
 S/geoCBTSetu.rel
-S/geoCBTScn.rel
 
 .mod	3
 .psect	VPRGbase
 S/geoCBMTerm.rel
-S/geoCBTScn.rel
 S/geoCBTGfx.rel
 S/geoCBTMenu.rel
 S/geoCBTBufV.rel
@@ -42,12 +41,10 @@ F/C=GFXFont.rel
 .mod	4
 .psect	VPRGbase
 S/geoCBTConn.rel
-S/geoCBTScn.rel
 
 ;.mod	5
 ;.psect	VPRGbase
 ;S/geoCBTXfer.rel
-;S/geoCBTScn.rel
 ;S/geoCBTFBox.rel
 ;MODxmodem.rel
 ;MODseqR.rel
@@ -56,7 +53,6 @@ S/geoCBTScn.rel
 .mod	6
 .psect	VPRGbase
 S/geoCBTBufF.rel
-S/geoCBTScn.rel
 S/geoCBTFBox.rel
 MODseqR.rel
 MODseqW.rel

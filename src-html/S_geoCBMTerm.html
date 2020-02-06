@@ -32,9 +32,9 @@
 .psect
 
 
-StartTerm:	jsr	scnReset
-	lda	menuInit
+StartTerm:	lda	menuInit
 	bne	10$
+	jsr	scnReset
 	ldw	A2,#0	; "About" refresh
 	ldw	A3,#DAdone	; DA refresh
 	ldw	A4,#DAinit	; DA init
@@ -111,7 +111,8 @@ keySetup:	mvw	keyVector,savKeyVec
 KeyPRtn:	lda	keyData
 	bne	10$
 	rts
-10$:	ldx	BufferFlg
+10$:	; *** TODO:BZ: convert ascii to petscii for buff
+	ldx	BufferFlg
 	beq	12$
 	pha
 	jsr	PutRByte
@@ -184,11 +185,11 @@ SafeDraw:	pha
 
 
 
-DrawChar:	;pla
+DrawChar:	; ***** TODO:BZ:Convert PETSCII to **FONT** code
 	cmp	#$0d
 	bne	15$
 	jmp	DrwCRLF
-15$:	cmp	#$08
+15$:	cmp	#$08	; ****** TODO:BZ:NOT RIGHT
 	bne	20$
 	jmp	PutDel
 20$:	cmp	#$20
