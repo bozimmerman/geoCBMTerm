@@ -3,7 +3,7 @@ Please read the LICENSE file for license information
 Please read the NOTICE file for credits information
 Home Page: http://www.zimmers.net/geos/
 
-geoTelnet is an ansi terminal program for connecting to Commodore BBS servers.  It is compatible with the following operating systems: GEOS 64 2.0, GEOS 128 2.0, Wheels 64 4.0+, Wheels 128 4.0+, MegaPatch 3.0 64, MegaPatch 3.0 128, gateWay 64, and gateWay 128.  It requires a 40 column composite monitor, C64Net WiFi Modem (preferred, or similar user-port modem), disk drive, and mouse or joystick. A GEOS compatible ram expansion unit (REU) is optional, but beneficial.
+geoCBMTerm is an color petscii terminal program for connecting to Commodore BBS servers.  It is compatible with the following operating systems: GEOS 64 2.0, GEOS 128 2.0, Wheels 64 4.0+, Wheels 128 4.0+, MegaPatch 3.0 64, MegaPatch 3.0 128, gateWay 64, and gateWay 128.  It requires a 40 column composite monitor, C64Net WiFi Modem (preferred, or similar user-port modem), disk drive, and mouse or joystick. A GEOS compatible ram expansion unit (REU) is optional, but beneficial.
 
 The C64Net WiFi Modem can be constructed from schematics by going to:
 http://coffeemud.net:8080/ctcug/index.php/Inexpensive_Wireless_Internet_Modem
@@ -16,14 +16,14 @@ PETSCII color and graphics terminal support
 PETSCII keyboard entry support
 Native support for 300-4800 baud (up to 7200 for SuperCPU enhanced systems)
 desk accessory access
-internal Phonebook for storing favorite telnet hosts
+internal Phonebook for storing favorite hosts
 quick connect option
 Echo (duplex) toggle
 X-Modem upload and download.
 64K input buffer support, with LOAD, SAVE, DUMP, and VIEW.
 
 Building:
-geoTelnet was built using Concept for Wheels 64.  It might also build using geoProgrammer, but hasn't been tested.
+geoCBMTerm was built using Concept for Wheels 64.  It might also build using geoProgrammer, but hasn't been tested.
 
 In addition to the given source, you'll require several components from the geoModules project:
 https://github.com/bozimmerman/geoModules
