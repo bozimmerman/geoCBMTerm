@@ -30,3 +30,18 @@ https://github.com/bozimmerman/geoModules
 
 You can link directly from the given object code, or built from scratch, provided the necessary geoModules include files and object files are present, and the F/geoTelnet.rel font file.
 
+Configuring and Using:
+
+geoCBMTerm is optimized to work with the C64Net WiFi modem from www.electronicsisfun.com.  The next best option is a user port wifi modem that uses the "Zimodem" firmware.  Information about this can be found at github.com/bozimmerman/Zimodem .  Next best is a wifi modem that supports AT commands, a DCD signal that goes high when the modem is online, and defaults to RTS/CTS flow control.  However, the program can also be used with any C= user port wifi modem for the C64 or C128 that defaults at 1200 baud.
+
+At startup, the program will set the baud rate to 1200 and issue the following commands: "atze0v1x1f0q0r1&p1i0".  This command resets the modem, turns off modem echo, turns on verbose messages, RTS/CTS flow control, C= cariage returns, PETSCII command mode, and then sends the modem status message. Also, by default, the program starts in DCD-active mode, and local echo turned on.
+
+To change the startup default settings, select the geoCBMTerm application in deskTop and bring up the Information page for the app.  At the bottom is the information area which, in some versions of GEOS, can be edited.  If you can edit this area, you can add one of more of the following switches to the information text area:
+
+-D  : turn off DCD active mode.  If your modem does not support the standard Commodore "Data Carrier Detect" signal, and does not make that signal go active whenever remotely connected, you should use this switch.
+
+-E  : turn off local echo mode by default
+
+-B  : increment the default baud rate.  If you want the program to default at 2400 baud, use -B.  To default at 4800, use -B -B.
+
+=<at string> : If an equal sign appears in the information text area, then every character after that will be sent to your modem at application start time, instead of the sequence listed above.  For example, if you are happy with your modems default settings, then you may end the entire info text area with =Z
