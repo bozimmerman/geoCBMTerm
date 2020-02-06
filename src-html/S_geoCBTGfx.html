@@ -87,38 +87,47 @@ UP2FONT:
 
 
 CNTRLCH1:
-.word 0,0,0,0,0,ColorWH,0,0,0,0,0,0,0,DrawCRLF,SwitchLC,0,0
-.word CrsrDn,RevON,CrsrTL,PutDel,0,0,0,0,0,0,0,ColorRD,CrsrRt,ColorGN,ColorBL
+.word 0,0,0,0,0,ColorWH,0,0
+.word 0,0,0,0,0,DrwCRLF,SwitchLC,0
+.word 0,CrsrDn,RevON,CrsrTL,PutDel,0,0,0
+.word 0,0,0,0,ColorRD,CrsrRt,ColorGN,ColorBL
 
 CNTRLCH2:
-.word 0,ColorOR,0,0,0,0,0,0,0,0,0,0,0,DrawCRLF,SwitchUC,0
-.word ColorBK, CrsrUp, RevOFF, ClearScn, DrawIns, ColorBN, ColorPI, ColorDG, ColorGR, ColorLN, ColorLB, ColorLG, ColorPU, CrsrLf, ColorYE, ColorCY
+.word 0,ColorOR,0,0,0,0,0,0
+.word 0,0,0,0,0,DrwCRLF,SwitchUC,0
+.word ColorBK, CrsrUp, RevOFF, ClearHome, DrawIns, ColorBN, ColorPI, ColorDG
+.word ColorGR, ColorLN, ColorLB, ColorLG, ColorPU, CrsrLt, ColorYE, ColorCY
 
-
+ClearHome:	mvb	R1H,txtXY+2
+	mvw	R11,txtXY
+	jsr	ClearScn
+	jsr	CrsrTL
+	mvb	txtXY+2,R1H
+	mvw	txtXY,R11
+	rts
 
 RevON:	lda flgREV
-	beq	10$
+	bne	10$
 	ldb	flgREV,#$ff
 	lda	curColor
-	and	#$0f
-	clc
-	rol	a
-	rol	a
-	rol	a
-	rol	a
+	and	#$f0
+	lsr	a
+	lsr	a
+	lsr	a
+	lsr	a
 	sta	curColor
 10$:	rts
 
 RevOFF:	lda flgREV
-	bne	10$
+	beq	10$
 	ldb	flgREV,#$00
 	lda	curColor
-	and	#$f0
+	and	#$0f
 	clc
-	ror	a
-	ror	a
-	ror	a
-	ror	a
+	asl	a
+	asl	a
+	asl	a
+	asl	a
 	sta	curColor
 10$:	rts
 
@@ -139,15 +148,14 @@ SwitchUC:	lda	flgUP
 
 
 ColorROL:	lda	flgREV
-	bne	10$
+	beq	10$
 	stx	curColor
 	rts
 10$:	txa
-	clc
-	rol	a
-	rol	a
-	rol	a
-	rol	a
+	asl	a
+	asl	a
+	asl	a
+	asl	a
 	sta	curColor
 	rts
 

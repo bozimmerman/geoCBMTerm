@@ -44,9 +44,15 @@ StartTerm:	lda	menuInit
 	ldw	fontPtr,#GEOSFonB
 	ldb	flgREV,#0
 	ldb	flgUP,#0
+10$:	ldb	fontSflg+1,#$00
+	cwi	fontPtr,#GEOSFonB
+	beq	13$
 	ldb	fontSflg+1,#$80
-	ldw	p2fonTab+1,#LP2FONT
-10$:	jsr	FixCurFont
+13$:	ldw	p2fonTab+1,#LP2FONT
+	lda	flgUP
+	beq	15$
+	ldw	p2fonTab+2,UP2FONT
+15$:	jsr	FixCurFont
 	jsr	FixEcho	; fix menu options 
 	jsr	FixATerm
 	jsr	Check128
@@ -87,7 +93,9 @@ FixCurFont:	mvw	fontPtr,R0
 	ldb	curWidth,#$08	; curWidth=realSize
 	rts
 
-
+FixNewFont:	mvw	fontPtr,R0
+	jsr	LoadCharSet
+	rts
 
 
 mdmDoneStr:	.byte 13,"  atzb1200",13,0
@@ -133,7 +141,7 @@ KeyPRtn:	lda	keyData
 30$:	ldx	flgEcho
 	beq	50$
 	cmp	#$14
-	beq	$50
+	beq	50$
 40$:	pha
 	jsr	SafeDraw
 	pla
@@ -173,7 +181,7 @@ p2fonTab:	lda	LP2FONT,x	; convert PETSCII to font code
 	txa		; if NOT, grab special routine
 	bmi	10$	; if HIGH special, use LOW table
 	and	#$1f
-	rol	a
+	asl	a
 	tax
 	lda	CNTRLCH1,x	; low special routine (<32)
 	sta	DrawSpec+1
@@ -183,7 +191,7 @@ p2fonTab:	lda	LP2FONT,x	; convert PETSCII to font code
 	sta	DrawSpec+2
 	bne	DrawSpec	; done setting spec 1, GO!
 10$:	and	#$1f	; * start of HIGH special tab
-	rol	a
+	asl	a
 	tax
 	lda	CNTRLCH2,x	; high special routine (128-128+32)
 	sta	DrawSpec+1
@@ -194,20 +202,23 @@ p2fonTab:	lda	LP2FONT,x	; convert PETSCII to font code
 	bne	DrawSpec	
 20$:	rts
 DrawSpec:	jmp	PutDel	; Do special processing routine
-DrawChFn:	pha		; ** beginning of normal ch draw
-fontSflg:	xor	#$80	; check bit most high
-	bmi	90$	; if current font is good, draw
+DrawChFn:	pha
+	and	#$80		; ** beginning of normal ch draw
+fontSflg:	cmp	#$00	; check bit most high
+	beq	90$	; if current font is good, draw	
 	pla		; otherwise, time to switch
 	bmi	10$	; if high bit, then fonA
 	pha
-	ldb	fontSflg+1,#$80
-	ldw	fontPtr,#GEOSFonA	; set font A
-	jsr	FixCurFont
-	bra	90$
-10$:	pha
 	ldb	fontSflg+1,#$00
 	ldw	fontPtr,#GEOSFonB	; set font B
 	jsr	FixCurFont
+	bra	80$
+10$:	pha
+	ldb	fontSflg+1,#$80
+	ldw	fontPtr,#GEOSFonA	; set font A
+	jsr	FixCurFont
+80$:	mvb	txtXY+2,R1H	; * might not be necc
+	mvw	txtXY,R11	; * TODO: might not be necc
 90$:	pla		; finally, draw the char
 	and	#$7f
 	jsr	PutChar	; small put char?
@@ -298,6 +309,11 @@ PutDel:	cwi	R11,#3	; todo: txtLeft
 	beq	20$
 	dew	colorPtr
 20$:	ldb	flgDoBg,#1
+	rts
+
+
+
+DrawIns:	;*******TODO:BZ
 	rts
 
 
@@ -399,34 +415,21 @@ QFlush:	lda	OutBuf
 	
 
 
-MainLp:	mvb	mdmRdRate,A5L
+MainLp:	jsr	JComGet
+	bcc	MainLp1
+	rts
+MainLp1:	tax
+	mvb	mdmRdRate,A5L
 	mvb	txtXY+2,R1H
 	mvw	txtXY,R11
+	jmp	MainDrCh	
 MainLp2:	jsr	JComGet
-	bcc	20$
-	lda	flgDoBg
-	beq	10$
-	mvw	R11,stringX
-	mvb	R1H,stringY
-	jsr	PromptOn
-10$:	lda	A9L
-	bne	11$
-	inc	A9L
-	lda	$dc08
-	sta	A9H
-11$:	cpb	$dc08,A9H
-	beq	19$
-	mvb	$dc08,A9H
-	inc	A9L
-	cbi	A9L,#$02
-	bcc	19$
-	ldb	A9L,#0
-	jsr	QFlush
-19$:	mvb	R1H,txtXY+2
+	bcc	10$
+	mvb	R1H,txtXY+2
 	mvw	R11,txtXY
-	rts
-20$:	tax
-	ldb	A9L,#0
+	jmp	BuffFlush	
+10$:	tax
+MainDrCh:	ldb	A9L,#0
 CT64128A:	.byte	$18	; clc=64, sec=$38
 	bcc	10$
 	phb	BANK_REG	; c128 save
@@ -454,6 +457,27 @@ CT64128B:	.byte	$18		; clc=64, sec=$38
 	mvw	R11,txtXY
 	rts
 
+BuffFlush:	lda	flgDoBg	; check for flush/exit -- no req!		
+	beq	10$
+	mvw	txtXY,stringX
+	mvb	txtXY+2,stringY
+	jsr	PromptOn
+10$:	lda	A9L
+	bne	11$
+	inc	A9L
+	lda	$dc08
+	sta	A9H
+11$:	cpb	$dc08,A9H
+	beq	19$
+	mvb	$dc08,A9H
+	inc	A9L
+	cbi	A9L,#$02
+	bcc	19$
+	ldb	A9L,#0
+	jsr	QFlush
+19$:	;mvb	R1H,txtXY+2
+	;mvw R11,txtXY
+	rts
 
 ; that's all folks!
 

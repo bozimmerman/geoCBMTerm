@@ -31,7 +31,7 @@ Setup:	ldw	R9,#$8400	; read the header part
 30$:	jsr	scnSetup	; clear screen
 	ldb	menuInit,#0	; flag un-setup menu
 	ldb	flgEcho,#1
-	ldb	flgANSI,#1
+	ldb	flgANSI,#0
 	jsr	mdmSetup	; * Send modem init, and Floff
 	; other stuff
 	jmp	CBTTerm
