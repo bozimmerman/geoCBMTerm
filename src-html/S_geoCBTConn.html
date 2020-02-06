@@ -34,22 +34,21 @@ QConnect:	ldw	A2,#NewHost
 	lda	NewHost
 	beq	30$
 	jsr	QDoConn
-30$:	jsr	keySetup
-	jmp	ResColorScn
+30$:	jmp	CBTTerm
 
 QDoConn:	mvb	baseColor,curColor
 	ldw	R0,#QConnCmd
 	jsr	ComPutS
-	ldw	R0,#QConnCmd
-	jsr	DrawStr
+	;ldw	R0,#QConnCmd
+	;jsr	DrawStr
 	ldw	R0,#NewHost
 	jsr	ComPutS
-	ldw	R0,#NewHost
-	jsr	DrawStr
+	;ldw	R0,#NewHost
+	;jsr	DrawStr
 	ldw	R0,#QConnRcm
 	jsr	ComPutS
-	ldw	R0,#QConnRcm
-	jsr	DrawStr
+	;ldw	R0,#QConnRcm	; removed 
+	;jsr	DrawStr
 	rts
 	
 QConnCmd:	.byte	13,10,"atd",34,0
@@ -90,9 +89,7 @@ QConnPhb:
 	cmp	#$05
 	beq	50$
 20$:	jsr	CloseRecordFile
-	jsr	ComEnable
-	jsr	keySetup
-	jmp	ResColorScn
+	jmp	CBTTerm
 30$:	jsr	NewPhb
 	jsr	MvCurrPg	; *TODO: better pg move
 	bra	15$
@@ -455,8 +452,7 @@ OpenPhNm:	jsr	LdSelPhb
 30$:	jsr	CloseRecordFile
 	jsr	ComEnable
 	jsr	QDoConn
-	jsr	keySetup
-	jmp	ResColorScn
+	jmp	CBTTerm
 
 
 MkNewHost:

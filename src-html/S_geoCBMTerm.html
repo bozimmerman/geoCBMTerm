@@ -32,7 +32,8 @@
 .psect
 
 
-StartTerm:	lda	menuInit
+StartTerm:	jsr	scnReset
+	lda	menuInit
 	bne	10$
 	ldw	A2,#0	; "About" refresh
 	ldw	A3,#DAdone	; DA refresh
@@ -78,17 +79,6 @@ FixCurFont:	mvw	fontPtr,R0
 	jsr	LoadCharSet
 	ldb	baselineOffset,#0
 	ldb	curWidth,#$08	; curWidth=realSize
-	rts
-
-
-
-CrsrTL:	mvb	txtTop,txtXY+2
-	ldw	colorLPtr,#COLOR_MATRIX+(40*2)
-	jsr	CrsrStLn
-	rts
-
-CrsrStLn:	mvw	txtLeft,txtXY
-	mvw	colorLPtr,colorPtr
 	rts
 
 
@@ -287,8 +277,6 @@ ClrColLn:	tya
 
 
 
-
-
 PutDel:	cwi	R11,#3	; todo: txtLeft
 	bcs	15$
 	mvw	txtRight,R11
@@ -309,6 +297,26 @@ PutDel:	cwi	R11,#3	; todo: txtLeft
 	beq	20$
 	dew	colorPtr
 20$:	ldb	flgDoBg,#1
+	rts
+
+
+CrsrTL:	mvb	txtTop,txtXY+2
+	ldw	colorLPtr,#COLOR_MATRIX+(40*2)
+	jsr	CrsrStLn
+	rts
+
+CrsrStLn:	mvw	txtLeft,txtXY
+	mvw	colorLPtr,colorPtr
+	rts
+
+scnReset:	mvb	baseColor,curColor
+	jsr	CrsrTL	
+	mvb	txtXY+2,R1H
+	mvw	txtXY,R11
+	ldb	windowTop,#0	; necc for menu recover?
+	mvb	txtBot,windowBottom,
+	mvw	txtLeft,leftMargin
+	mvw	txtRight,rightMargin
 	rts
 
 
@@ -351,14 +359,6 @@ CrsrLt:	cpw	txtLeft,txtXY	; Cursor Backward
 	beq	20$
 	dew	colorPtr
 20$:	rts
-
-
-
-
-
-
-
-
 
 
 

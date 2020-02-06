@@ -34,19 +34,8 @@ Setup:	ldw	R9,#$8400	; read the header part
 	ldb	flgANSI,#1
 	jsr	mdmSetup	; * Send modem init, and Floff
 	; other stuff
-40$:	lda	CLL2Busy
-	bmi	40$	; clear the current byte and 
-	jsr	JComDisable	; disable the modem
 	jmp	CBTTerm
 
-
-
-Check128:	lda	#$12
-	cmp	$c00f
-	bpl	10$
-	lda	$c013
-10$:	cmp	#$80
-	rts
 
 
 ;** Read in any arguments
@@ -101,8 +90,8 @@ scnSetup:	ldb	txtTop,#$10	; screen def
 	jsr	ClrTrmScn
 	jsr	UseSystemFont	; * for now
 	ldb	dispBufferOn,#ST_WR_FORE
-scnReset:	mvb	baseColor,curColor
-	jsr	CrsrTL	
+	;mvb	baseColor,curColor
+	;jsr	CrsrTL	
 	mvb	txtXY+2,R1H
 	mvw	txtXY,R11
 	ldb	windowTop,#0	; necc for menu recover?
@@ -110,7 +99,6 @@ scnReset:	mvb	baseColor,curColor
 	mvw	txtLeft,leftMargin
 	mvw	txtRight,rightMargin
 	rts
-
 
 CrsrTL:	mvb	txtTop,txtXY+2
 	ldw	colorLPtr,#COLOR_MATRIX+(40*2)

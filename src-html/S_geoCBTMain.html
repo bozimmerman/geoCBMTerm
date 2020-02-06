@@ -1,6 +1,6 @@
 <!DOCTYPE html><html><head><title>Untitled</title></head><body><pre>
 ;*****************************
-;* S/geoTelMain
+;* S/geoCBTMain
 ;* (c) 2018 Bo Zimmerman
 ;*
 ;* The First Executing Code of the app
@@ -37,13 +37,20 @@ Main:	jsr	i_InitVPrg
 PermName:	.byte "geoCBMTerm  1.0a",0
 
 
+CBTClrMdm:
+10$:	lda	CLL2Busy
+	bmi	10$	; clear the current byte and 
+	jmp	JComDisable	; disable the modem
+
 ; ** switch back to terminal mode
-CBTTerm:	jsr	i_LdMod	 ; start the term!
+CBTTerm:	jsr	CBTClrMdm
+	jsr	i_LdMod	 ; start the term!
 	.byte	REC_TERM
 CBTFirst:	jmp	VPRGbase
 
 ; ** do a Capture Buffer File Operation
 CBTBufF:	pha
+	jsr	CBTClrMdm
 	jsr	i_LdMod
 	.byte	REC_BUFF
 	pla
@@ -52,6 +59,7 @@ CBTSecnd:	jmp	VPRGbase+3
 
 ;** do a Quick Connect or Phonebook operation
 CBTConn:	pha
+	jsr	CBTClrMdm
 	jsr	i_LdMod
 	.byte	REC_CONN
 	pha
@@ -60,6 +68,7 @@ CBTConn:	pha
 
 ;** do a File Transfer Operation
 CBTXfer:	pha
+	jsr	CBTClrMdm
 	jsr	i_LdMod
 	.byte	REC_XFER
 	pha
@@ -136,6 +145,39 @@ FixDrive:	cpb	curDrive,VPRGdriv
 10$:	lda	VPRGdriv
 	jsr	VPRGdev
 	jsr	VPRGok
+	rts
+
+
+Check128:	lda	#$12
+	cmp	$c00f
+	bpl	10$
+	lda	$c013
+10$:	cmp	#$80
+	rts
+
+ComReset:	jsr	ComPause
+	jmp	JComReInit
+
+ComPause:	jsr	Check128
+	bne	10$
+	phb	BANK_REG	; c128 save
+	ldb	BANK_REG,#BANK_vSTD
+	bne	20$
+10$:	phb	$01	; c64 save
+	ldb	$01, #$30
+20$:	lda	#$00
+	sta	APITemp2
+	sta	$dc08
+30$:	lda	$dc08
+	beq	30$
+	inc	APITemp2
+	cbi	APITemp2,#9
+	bcc	20$
+	jsr	Check128
+	bne	40$
+	plb	BANK_REG
+	rts
+40$:	plb	$01
 	rts
 
 
