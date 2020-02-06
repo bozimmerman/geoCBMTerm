@@ -37,8 +37,7 @@ DoXUpload:	jsr	XferInit
 	jsr	DoXUBox
 	beq	10$
 	jmp	CBTTerm
-10$:	lda	txtTop	; first row to clear
-	jsr	ClrTrmScn	; clears the screen
+10$:	jsr	ClearScn	; clears the screen
 	ldb	flgDoBg,#0
 	jmp	XUpload
 
@@ -69,14 +68,12 @@ XUpload:	ldb	XMoreFlg,#$ff	; there is definitely more to get
 	cpx	#0
 	bne	15$
 	jsr	XComReset
-	lda	txtTop	; first row to clear
-	jsr	ClrTrmScn	; clears the screen
+	jsr	ClearScn	; clears the screen
 	ldw	A2,#XUpDnTxt
 	jsr	OKBox
 	bra	20$
 15$:	jsr	XComReset
-	lda	txtTop	; first row to clear
-	jsr	ClrTrmScn	; clears the screen
+	jsr	ClearScn	; clears the screen
 	ldw	A2,#XUpErTxt
 	jsr	OKBox
 20$:	jsr	FixDrive
@@ -230,8 +227,7 @@ DoXDownload:
 	jsr	DoXDBox
 	beq	10$
 	jmp	CBTTerm
-10$:	lda	txtTop	; first row to clear
-	jsr	ClrTrmScn	; clears the screen
+10$:	jsr	ClearScn	; clears the screen
 	ldb	flgDoBg,#0
 	jmp	XDownload
 
@@ -266,8 +262,7 @@ XDownload:	ldw	XBufWrPtr,#BACK_SCR_BASE
 	sta	A2L
 	jsr	ClosSF
 	jsr	XComReset
-	lda	txtTop	; first row to clear
-	jsr	ClrTrmScn	; clears the screen
+	jsr	ClearScn	; clears the screen
 	ldw	A2,#XDnDnTxt
 	jsr	OKBox
 	bra	20$
@@ -276,8 +271,7 @@ XDownload:	ldw	XBufWrPtr,#BACK_SCR_BASE
 	ldw	R0,#XFilename
 	jsr	DeleteFile
 	jsr	XComReset
-	lda	txtTop	; first row to clear
-	jsr	ClrTrmScn	; clears the screen
+	jsr	ClearScn	; clears the screen
 	ldw	A2,#XDnErTxt
 	jsr	OKBox
 20$:	jsr	FixDrive

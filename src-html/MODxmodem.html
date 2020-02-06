@@ -89,7 +89,7 @@ XMOrcvSt:	mvw	A2,XMORcVec+1	; receive 1 byte in .a
 XMORcVec:	jmp	XMONada	; receive 1 byte
 XMORgVec:	jmp	XMONada	; good block receive bytes
 XMOErVec:	jmp	XMONada	; error block receive bytes
-XMONada:	rts	
+XMONada:	rts
 
 XMOrcvLp:	lda	XMOErrors
 	cmp	#$0e
@@ -322,7 +322,7 @@ XMOsendStart:	jsr	XMOReTm
 40$:	inc	XMOErrors
 	jsr	XMOErVec
 	jsr	XMOPause
-	jmp	XMOcontSend
+	bra	10$	; jmp	XMOcontSend
 50$:	inc	XMOBlock
 	lda	XMOIOStat
 	beq	80$
@@ -356,40 +356,52 @@ XMOClear:	lda	#0
 
 
 
-XMOReTm:	lda	$01
-	pha
-	lda	#$35
-	sta	$01
-	lda	#0
-	sta	XMOChkC
-	sta	$dc09
-	sta	$dc08
-	pla
-	sta	$01
+XMOReTm:	jsr	Check128
+	beq	10$
+	phb	$01
+	ldb	$01,#$35
+	jsr	XMOClrTm
+	plb	$01
+	rts
+10$:	phb	$ff00
+	ldb	$ff00,#$7e
+	jsr	XMOClrTm
+	plb	$ff00
 	rts
 
 XMOChkTm:	ldb	XMOClock,#0
-	lda	$01
-	pha
-	lda	#$35
-	sta	$01
-	lda	$dc09
+	jsr	Check128
+	beq	20$
+	phb	$01
+	ldb	$01,#$35
+	jsr	XMOGooTm
+	plb	$01
+10$:	cbi	XMOChkC,#3
+	bcs	XMOBadTm
+	rts
+20$:	phb	$ff00
+	ldb	$ff00,#$7e
+	jsr	XMOGooTm
+	plb	$ff00
+	bra	10$
+XMOBadTm:	inc	XMOTmOuts
+	inc	XMOClock
+	jmp	XMOReTm
+
+XMOGooTm:	lda	$dc09
 	beq	10$
 	inc	XMOChkC
 	lda	#0
 	sta	$dc09
 	sta	$dc08
-10$:	lda	$dc08
-	pla
-	sta	$01
-	cbi	XMOChkC,#3
-	bcs	XMOBadTm
+10$:	lda	$dc08	; forces clock restart
 	rts
-XMOBadTm:	inc	XMOTmOuts
-	inc	XMOClock
-	jmp	XMOReTm
 
-
+XMOClrTm:	lda	#0
+	sta	XMOChkC
+	sta	$dc09
+	sta	$dc08
+	rts
 
 XMOChkAbort:	clc
 	jsr	XMOabVec
@@ -408,7 +420,7 @@ XMOBufFlush:	ldy	#0
 	iny
 	cpy	#$85
 	bcc	10$
-XMOMinFlush:	jsr	CLL2xxRb
+XMOMinFlush:	jsr	JComBufR
 	lda	#0
 	sta	XMOBufBit
 	sta	XMOGood
