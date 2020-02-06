@@ -34,9 +34,14 @@ QConnect:	ldw	A2,#NewHost
 	lda	NewHost
 	beq	30$
 	jsr	QDoConn
-30$:	jmp	CBTTerm
+30$:	jsr	MnuActDn
+	jmp	CBTTerm
 
-QDoConn:	mvb	baseColor,curColor
+
+
+QDoConn:	jsr	JComEnable
+	jsr	JComFlon
+	mvb	baseColor,curColor
 	ldw	R0,#QConnCmd
 	jsr	ComPutS
 	;ldw	R0,#QConnCmd
@@ -49,10 +54,13 @@ QDoConn:	mvb	baseColor,curColor
 	jsr	ComPutS
 	;ldw	R0,#QConnRcm	; removed 
 	;jsr	DrawStr
+	jsr	JComFloff
 	rts
 	
 QConnCmd:	.byte	13,10,"atd",34,0
 QConnRcm:	.byte 34,13,10,0
+
+
 
 QConnDat:	.byte	$01	; size flag, and shadow pattern
 	.byte	$1f,$64,$36,$00,$14,$01	; dialog box dimensions
@@ -89,6 +97,7 @@ QConnPhb:
 	cmp	#$05
 	beq	50$
 20$:	jsr	CloseRecordFile
+	jsr	MnuActDn
 	jmp	CBTTerm
 30$:	jsr	NewPhb
 	jsr	MvCurrPg	; *TODO: better pg move
@@ -96,7 +105,8 @@ QConnPhb:
 40$:	jsr	OldPhb
 	jsr	MvCurrPg
 	bra	15$
-50$:	jmp	OpenPhNm
+50$:	jsr	MnuActDn
+	jmp	OpenPhNm
 
 QPhbDat:	.byte	$01	; size flag, and shadow pattern
 	.byte	$1f,$a9,$36,$00,$08,$01	; dialog box dimensions

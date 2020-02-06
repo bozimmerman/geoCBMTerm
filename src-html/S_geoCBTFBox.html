@@ -13,16 +13,6 @@
 .psect
 
 
-MnuActDn:	jsr	FixDrive
-	;jsr	keySetup	; omg do not do this.. its the term!
-	jmp	ResColorScn	; <-- only if xfer not done
-ResColorScn:	ldw	R1,#COLOR_MATRIX+(40*2)	; scrn color
-	ldw	R0,#ColorBBuf
-	ldw	R2,#$03e8-(40*2)
-	jsr	MyMoveData
-	rts
-
-
 DoXUBox:
 05$:	ldb	FBOXnod1,#0
 	ldb	FBOXnoo2,#$06	; reset disk icon

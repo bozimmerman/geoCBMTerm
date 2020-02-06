@@ -14,7 +14,7 @@
 
 .psect
 
-AboutStrs:	.byte	24,"      geoCBMTerm 1.0a",0
+AboutStrs:	.byte	24,"      geoCBMTerm 1.0 ",0
 	.byte	24,"  For C64Net WiFi Modem",0
 	.byte	24,"    By Bo Zimmerman",0
 	.byte	24,"      bo@zimmers.net",0
@@ -51,13 +51,15 @@ ResColorScn:	ldw	R1,#COLOR_MATRIX+(40*2)	; scrn color
 	jsr	MyMoveData
 	rts
 
-ChkOnLn1:	lda	FlgNoDCD
+ChkOnLn1:	bra	10$	; TODO:BZ:DELME
+	lda	FlgNoDCD
 	bne	10$
 	jmp	JComOnline
 10$:	lda	#1
 	rts
 
-ChkOnLn2:	lda	FlgNoDCD
+ChkOnLn2:	bra	10$	; TODO:BZ:DELME
+	lda	FlgNoDCD
 	bne	10$
 	jmp	JComOnline
 10$:	lda	#0
@@ -347,8 +349,6 @@ doXDownload:	jsr	GotoFirstMenu
 	jmp	CBTXfer
 
 
-
-
 doEchoOn:	lda	#$01
 	sta	flgEcho
 	jsr	FixEcho
@@ -411,10 +411,11 @@ doBaud7200:	lda	#4
 	jmp	doBaud
 doBaud9600:	lda	#5
 	jmp	doBaud
-doBaud:	cmp	CLL2Baud
+doBaud:	cmp	BaudCode
 	bne	10$
 	jmp	GotoFirstMenu
-10$:	sta	A2L
+10$:	sta	BaudCode
+	sta	A2L
 	jsr	GetBaudPtr
 	inw	A0
 	ldy	#0
@@ -428,14 +429,15 @@ doBaud:	cmp	CLL2Baud
 30$:	lda	#13
 	sta	BaudCmd+5,y
 	jsr	keyRestore
-	jsr	CLL2xxRb
+	;jsr	CLL2xxRb	; resets modem buf ptr -- is necc?
 	ldw	R0,#BaudCmd
 	jsr	ComPutS
-	ldw	R0,#BaudCmd
-	jsr	DrawStr
+	;ldw	R0,#BaudCmd
+	;jsr	DrawStr
 	jsr	BaudSet
 	jsr	FixBaud
-	jsr	CLL2xxRb
+	;jsr	CLL2xxRb	; again, dunno if necc
+	jsr	JComFlon
 	jsr	keySetup
 	jmp	GotoFirstMenu	
 
@@ -449,16 +451,15 @@ GetBaudPtr:	asl	a
 	rts
 
 
-
 DAinit:	jsr	ScreenSafe
 	jsr	SavColorScn
 	jsr	keyRestore
-	jsr	ComDisable
-	jsr	ComUninst
+	jsr	JComDisable
+	jsr	JComUninst
 	rts
 
 DAdone:	jsr	ResColorScn
-	jsr	ComReInit
+	jsr	JComReInit
 	jsr	keySetup
 	rts
 
@@ -476,11 +477,11 @@ FixBaud:	ldx	#0
 	lda	#27
 	sta	(A0),y
 	bra	10$
-20$:	lda	CLL2Baud
+20$:	lda	BaudCode
 	add	#1
 	asl	a
 	sta	mdmRdRate
-	lda	CLL2Baud
+	lda	BaudCode
 	jsr	GetBaudPtr
 	mvw	A0,Menu03b
 	lda	#26

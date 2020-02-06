@@ -63,7 +63,7 @@ CBTConn:	pha
 	jsr	keyRestore
 	jsr	i_LdMod
 	.byte	REC_CONN
-	pha
+	pla
 	bne	CBTSecnd
 	jmp	CBTFirst
 
@@ -75,7 +75,7 @@ CBTXfer:	pha
 	jsr	keyRestore
 	jsr	i_LdMod
 	.byte	REC_XFER
-	pha
+	pla
 	bne	CBTSecnd
 	jmp	CBTFirst
 	
@@ -151,6 +151,16 @@ FixDrive:	cpb	curDrive,VPRGdriv
 	jsr	VPRGok
 	rts
 
+MnuActDn:	jsr	FixDrive
+	;jsr	keySetup	; omg do not do this.. its the term!
+	jmp	ResColorScn	; <-- only if xfer not done
+
+ResColorScn:	ldw	R1,#COLOR_MATRIX+(40*2)	; scrn color
+	ldw	R0,#ColorBBuf
+	ldw	R2,#$03e8-(40*2)
+	jsr	MyMoveData
+	rts
+
 
 Check128:	lda	#$12
 	cmp	$c00f
@@ -208,6 +218,7 @@ txtREnd:	.word	312
 
 ; * Here be Global Variables
 .ramsect
+BaudCode:	.block	1
 FlgNoDCD:	.block	1
 menuInit:	.block	1
 BuffEnable:	.block	1

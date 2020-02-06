@@ -219,8 +219,7 @@ fontSflg:	cmp	#$00	; check bit most high
 	ldb	fontSflg+1,#$80
 	ldw	fontPtr,#GEOSFonA	; set font A
 	jsr	FixCurFont
-80$:	mvb	txtXY+2,R1H	; * might not be necc
-	mvw	txtXY,R11	; * TODO: might not be necc
+80$:	; do nothing dunno if R1H,R11 are destroyed or not
 90$:	pla		; finally, draw the char
 	and	#$7f
 	jsr	PutChar	; small put char?
@@ -373,12 +372,12 @@ DrawIns2:	mvw	colorPtr,R0	; i hate the label here
 
 
 
-CrsrTL:	mvb	txtTop,txtXY+2
+CrsrTL:	mvb	txtTop,R1H
 	ldw	colorLPtr,#COLOR_MATRIX+(40*2)
 	jsr	CrsrStLn
 	rts
 
-CrsrStLn:	mvw	txtLeft,txtXY
+CrsrStLn:	mvw	txtLeft,R11
 	mvw	colorLPtr,colorPtr
 	rts
 
@@ -393,50 +392,45 @@ scnReset:	mvb	baseColor,curColor
 	rts
 
 
-CrsrUp:	cpb	txtTop,txtXY+2	; Cursor Up
+CrsrUp:	cpb	txtTop,R1H	; Cursor Up
 	bcc	10$
 	rts
 10$:	svw	#40,colorLPtr		; 80 col unfixed
 	svw	#40,colorPtr
-	sbb	curHeight,txtXY+2
+	sbb	curHeight,R1H
 	rts
 
-CrsrDn:	mvw	txtXY,R11
-	mvb	txtXY+2,R1H
-	jsr	DrawLF
-	mvw	R11,txtXY
-	mvb	R1H,txtXY+2
-	rts
+CrsrDn:	jmp	DrawLF
 
-CrsrRt:	cpw	txtXY,txtREnd	; Cursor Forward
+CrsrRt:	cpw	R11,txtREnd	; Cursor Forward
 	bcc	20$
-	cpb	txtXY+2,txtBEnd
+	cpb	R1H,txtBEnd
 	bcc	10$
 	rts
-10$:	ldw	txtXY,#0
+10$:	ldw	R11,#0
 	mvw	colorLPtr,colorPtr
 	jmp	CrsrDn
 20$:	ldb	curWidth+1,#0
-	adw	curWidth,txtXY
+	adw	curWidth,R11
 	inw	colorPtr
-	cpw	txtXY,txtREnd	; Cursor Forward
+	cpw	R11,txtREnd	; Cursor Forward
 	bcc	30$
-	cpb	txtXY+2,txtBEnd
+	cpb	R1H,txtBEnd
 	bcc	10$
 30$:	rts
 
-CrsrLt:	cpw	txtLeft,txtXY	; Cursor Backward	
+CrsrLt:	cpw	txtLeft,R11	; Cursor Backward	
 	bcc	20$
-	cbi	txtXY+2,#$20	; todo: txtHeight?
+	cbi	R1H,#$20	; todo: txtHeight?
 	bcs	10$
 	rts
-10$:	mvw	txtRight,txtXY
-	svw	#8,txtXY
+10$:	mvw	txtRight,R11
+	svw	#8,R11
 	mvw	colorLPtr,colorPtr
 	avw	#39,colorPtr	; fix for 80 col
 	jmp	CrsrUp
 20$:	ldb	curWidth+1,#0
-	sbw	curWidth,txtXY
+	sbw	curWidth,R11
 	dew	colorPtr
 30$:	rts
 
@@ -476,51 +470,51 @@ QFlush:	lda	OutBuf
 	
 
 
-MainLp:	jsr	KeyChex
-	jsr	JComGet
-	bcc	MainLp1
+MainLp:	jsr	KeyChex	; check CNTRL/C=
+	jsr	JComGet	; check for a modem char
+	bcc	GotMByte
 	lda	flgDoBg	; check for crsr mv		
 	beq	10$
-	mvw	txtXY,stringX
+	mvw	txtXY,stringX	; screen changed, update cursor
 	mvb	txtXY+2,stringY
 	jsr	PromptOn
 10$:	rts
-MainLp1:	tax
+GotMByte:	tax		; got First char! setup
 	mvb	mdmRdRate,A5L
-	mvb	txtXY+2,R1H
+	mvb	txtXY+2,R1H	; setup draw char pos
 	mvw	txtXY,R11
-	jmp	MainDrCh	
-MainLp2:	jsr	JComGet
+	jmp	MainDrCh	; go process char in x	
+NextBLp:	jsr	JComGet
 	bcc	10$
 	mvb	R1H,txtXY+2
 	mvw	R11,txtXY
 	jmp	BuffFlush	
 10$:	tax
-MainDrCh:	ldb	A9L,#0
-CT64128A:	.byte	$18	; clc=64, sec=$38
+MainDrCh:	ldb	A9L,#0	; main draw char = .x
+CT64128A:	.byte	$18	; clc=64, sec=$38, C128 chk
 	bcc	10$
 	phb	BANK_REG	; c128 save
 	ldb	BANK_REG,#BANK_vSTD
 	bne	20$
 10$:	phb	$01	; c64 save
 	ldb	$01, #$30
-20$:	txa
+20$:	txa		; main draw char = .a
 	.byte	$a2	; ldx immediate
-BufferFlg:	.byte 0
+BufferFlg:	.byte 0	; buffering ON flag HERE
 	beq	25$
 	pha
-	jsr	PutRByte
+	jsr	PutRByte	; write byte to buffer
 	pla
-25$:	jsr	DrawChar
+25$:	jsr	DrawChar	; draw byte in .a
 CT64128B:	.byte	$18		; clc=64, sec=$38
 	bcc	10$
-	plb	BANK_REG
+	plb	BANK_REG	; restore from I/O config
 	bra	20$
 10$:	plb	$01
-20$:	dec	A5L
-	beq	30$
-	jmp	MainLp2
-30$:	mvb	R1H,txtXY+2
+20$:	dec	A5L	; modem read rate?
+	beq	30$	; leave if we did too much
+	jmp	NextBLp	; otherwise, get next char
+30$:	mvb	R1H,txtXY+2	; we are done, save draw pos
 	mvw	R11,txtXY
 	rts
 

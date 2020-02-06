@@ -105,35 +105,18 @@ CNTRLCH2:
 FullCRLF:	jsr	DrwCRLF
 	jmp	RevOFF
 
-ClearHome:	mvb	R1H,txtXY+2
-	mvw	R11,txtXY
-	jsr	ClearScn
-ClearFin:	jsr	CrsrTL
-FullFins:	mvb	txtXY+2,R1H
-	mvw	txtXY,R11
-	rts
+ClearHome:	jsr	ClearScn
+ClearFin:	jmp	CrsrTL
 
-FullHome:	mvb	R1H,txtXY+2
-	mvw	R11,txtXY
-	jmp	ClearFin
+FullHome:	jmp	CrsrTL
 
-FullUp:	mvb	R1H,txtXY+2
-	mvw	R11,txtXY
-	jsr	CrsrUp
-	jmp	FullFins
+FullUp:	jmp	CrsrUp
 
 FullDn:	jmp	DrawLF
 
-FullRt:	mvb	R1H,txtXY+2
-	mvw	R11,txtXY
-	jsr	CrsrRt
-	jmp	FullFins
+FullRt:	jmp	CrsrRt
 
-FullLt:	mvb	R1H,txtXY+2
-	mvw	R11,txtXY
-	jsr	CrsrLt
-	jmp	FullFins
-
+FullLt:	jmp	CrsrLt
 
 
 RevON:	lda flgREV
